@@ -1,0 +1,2132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reading Now</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:           #eceae3;
+    --surface:      #f7f5f0;
+    --surface-alt:  #ffffff;
+    --text:         #1c1a18;
+    --text-muted:   #7a7570;
+    --text-light:   #a8a39d;
+    --accent:       #9b2020;
+    --accent-light: #f5ecea;
+    --border:       #d8d4cc;
+    --border-light: #e8e4dc;
+    --gold:         #8a7145;
+    --green:        #3a6b3a;
+    --green-bg:     #eef4ee;
+    --radius:       3px;
+    --shadow-sm:    0 1px 3px rgba(0,0,0,0.07);
+    --shadow-md:    0 6px 24px rgba(0,0,0,0.12);
+  }
+
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  /* ── Layout ──────────────────────────────────────────────────────────── */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px 80px;
+  }
+
+  /* ── Masthead ─────────────────────────────────────────────────────────── */
+  .masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid var(--border);
+    padding: 20px 0 16px;
+    margin-bottom: 36px;
+  }
+
+  .masthead-date {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    min-width: 200px;
+  }
+
+  .masthead-title {
+    font-size: 28px;
+    font-weight: normal;
+    letter-spacing: -0.5px;
+    line-height: 1;
+    color: var(--text);
+    text-align: center;
+  }
+
+  .masthead-title em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .masthead-tagline {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    text-transform: uppercase;
+    text-align: right;
+    min-width: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
+  .about-link {
+    background: none;
+    border: none;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.15s;
+  }
+
+  .about-link:hover { color: var(--accent); }
+
+  /* ── Sync dot ─────────────────────────────────────────────────────────── */
+  .sync-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 3px;
+    border-radius: 50%;
+    transition: opacity 0.15s;
+  }
+
+  .sync-btn:hover { opacity: 0.7; }
+
+  .sync-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--border);
+    display: inline-block;
+    transition: background 0.4s;
+  }
+
+  .sync-dot.ok      { background: var(--green); }
+  .sync-dot.syncing { background: var(--gold); animation: pulse 1s infinite; }
+  .sync-dot.error   { background: var(--accent); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+  }
+
+  /* ── About overlay ────────────────────────────────────────────────────── */
+  .about-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(28,26,24,0.45);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .about-overlay.open { display: flex; }
+
+  .about-panel {
+    background: var(--surface-alt);
+    border-radius: 4px;
+    padding: 44px 48px 40px;
+    width: 100%;
+    max-width: 540px;
+    box-shadow: var(--shadow-md);
+    position: relative;
+  }
+
+  .about-close {
+    position: absolute;
+    top: 18px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: var(--text-light);
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.15s;
+    padding: 4px;
+  }
+
+  .about-close:hover { color: var(--text); }
+
+  .about-wordmark {
+    font-size: 22px;
+    font-weight: normal;
+    letter-spacing: -0.3px;
+    color: var(--text);
+    margin-bottom: 28px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .about-wordmark em { font-style: italic; color: var(--accent); }
+
+  .about-body {
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--text);
+  }
+
+  .about-body p { margin-bottom: 1.2em; }
+  .about-body p:last-child { margin-bottom: 0; }
+
+  .about-footer {
+    margin-top: 28px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    gap: 24px;
+  }
+
+  .about-stat {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  .about-stat-num {
+    font-size: 22px;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 3px;
+  }
+
+  .about-stat-label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-light);
+  }
+
+  /* ── Setup overlay ────────────────────────────────────────────────────── */
+  .setup-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(28,26,24,0.55);
+    z-index: 400;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .setup-overlay.open { display: flex; }
+
+  .setup-panel {
+    background: var(--surface-alt);
+    border-radius: 4px;
+    padding: 40px 44px 36px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: var(--shadow-md);
+    position: relative;
+  }
+
+  .setup-close {
+    position: absolute;
+    top: 18px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: var(--text-light);
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.15s;
+    padding: 4px;
+  }
+
+  .setup-close:hover { color: var(--text); }
+
+  .setup-wordmark {
+    font-size: 20px;
+    font-weight: normal;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .setup-wordmark em { font-style: italic; color: var(--accent); }
+
+  .setup-subtitle {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-light);
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .setup-body {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-muted);
+    margin-bottom: 22px;
+  }
+
+  .setup-note {
+    font-size: 12px;
+    color: var(--text-light);
+    font-style: italic;
+    margin-top: 6px;
+  }
+
+  .setup-status {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12px;
+    margin-top: 8px;
+    min-height: 16px;
+    font-style: italic;
+    color: var(--text-light);
+  }
+
+  .setup-status.ok  { color: var(--green); }
+  .setup-status.err { color: var(--accent); font-style: normal; }
+
+  .setup-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-light);
+  }
+
+  .setup-skip {
+    background: none;
+    border: none;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12px;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.15s;
+  }
+
+  .setup-skip:hover { color: var(--text-muted); }
+
+  /* ── Two-column grid ─────────────────────────────────────────────────── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+
+  @media (min-width: 860px) {
+    .main-grid {
+      grid-template-columns: 5fr 6fr;
+      gap: 0;
+      align-items: start;
+    }
+
+    .col-articles {
+      border-right: 1px solid var(--border);
+      padding-right: 40px;
+    }
+
+    .col-books {
+      padding-left: 40px;
+    }
+  }
+
+  /* ── Section ─────────────────────────────────────────────────────────── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-rule {
+    display: inline-block;
+    width: 20px;
+    height: 2px;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .section-title {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .section-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-count {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    color: var(--text-light);
+  }
+
+  .section-count.warn { color: var(--accent); }
+
+  /* ── Add button ───────────────────────────────────────────────────────── */
+  .add-btn {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.3px;
+    color: var(--text-muted);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .add-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ── Capacity warning ─────────────────────────────────────────────────── */
+  .cap-warning {
+    display: none;
+    background: #fef8ee;
+    border-left: 3px solid var(--gold);
+    padding: 8px 12px;
+    font-size: 13px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #6a4e00;
+    margin-bottom: 12px;
+    font-style: italic;
+  }
+
+  .cap-warning.show { display: block; }
+
+  /* ── Article cards ────────────────────────────────────────────────────── */
+  .article-list { list-style: none; }
+
+  .article-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    position: relative;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .article-card:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .article-num {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    color: var(--text-light);
+    padding-top: 3px;
+    flex-shrink: 0;
+    width: 18px;
+  }
+
+  .article-body { flex: 1; min-width: 0; }
+
+  .article-title {
+    font-size: 15px;
+    line-height: 1.4;
+    color: var(--text);
+    margin-bottom: 5px;
+    padding-right: 20px;
+  }
+
+  .article-meta {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    color: var(--text-light);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .article-source { color: var(--text-muted); font-weight: 500; }
+
+  .expiry-badge { color: var(--text-light); }
+  .expiry-badge.soon { color: var(--accent); }
+
+  .article-del {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+    padding: 2px;
+  }
+
+  .article-card:hover .article-del { opacity: 1; }
+  .article-del:hover { color: var(--accent); }
+
+  /* ── Drag handle ──────────────────────────────────────────────────────── */
+  .drag-handle {
+    font-size: 13px;
+    color: var(--border);
+    cursor: grab;
+    flex-shrink: 0;
+    padding: 2px 4px 0 0;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+    user-select: none;
+  }
+
+  .article-card:hover .drag-handle { opacity: 1; }
+  .drag-handle:hover { color: var(--text-muted); }
+
+  .article-card.sortable-ghost {
+    opacity: 0.35;
+    background: var(--accent-light);
+    border-color: var(--accent);
+  }
+
+  .article-card.sortable-chosen { cursor: grabbing; }
+
+  .article-card.sortable-drag {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    border-color: var(--accent);
+    cursor: grabbing;
+  }
+
+  /* ── Empty state ──────────────────────────────────────────────────────── */
+  .empty {
+    padding: 28px 16px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-light);
+    font-style: italic;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+  }
+
+  /* ── Filter tabs ──────────────────────────────────────────────────────── */
+  .filter-tabs {
+    display: flex;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ftab {
+    background: none;
+    border: none;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-light);
+    padding: 6px 0;
+    margin-right: 18px;
+    margin-bottom: -1px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+
+  .ftab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+  /* ── Book cards ───────────────────────────────────────────────────────── */
+  .book-list { list-style: none; }
+
+  .book-card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 6px;
+    display: flex;
+    gap: 14px;
+    position: relative;
+    transition: box-shadow 0.15s;
+  }
+
+  .book-card { cursor: pointer; }
+  .book-card:hover { box-shadow: var(--shadow-sm); }
+
+  .book-cover {
+    width: 46px;
+    height: 64px;
+    background: var(--accent-light);
+    border-radius: 2px;
+    flex-shrink: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .book-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cover-ph { font-size: 20px; color: var(--accent); opacity: 0.25; }
+
+  .book-info { flex: 1; min-width: 0; }
+
+  .book-title {
+    font-size: 15px;
+    line-height: 1.3;
+    color: var(--text);
+    margin-bottom: 2px;
+    padding-right: 56px;
+  }
+
+  .book-author { font-size: 13px; font-style: italic; color: var(--text-muted); margin-bottom: 8px; }
+
+  .book-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  .status-pill {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+
+  .status-pill.done { background: var(--green-bg); color: var(--green); }
+
+  .book-progress {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    color: var(--text-light);
+  }
+
+  .stars { display: flex; gap: 1px; }
+  .star { font-size: 12px; color: #d8d0c4; line-height: 1; }
+  .star.on { color: var(--gold); }
+
+  .book-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .book-card:hover .book-actions { opacity: 1; }
+
+  .bact {
+    background: none;
+    border: none;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 2px;
+    transition: color 0.15s;
+    line-height: 1;
+  }
+
+  .bact:hover { color: var(--accent); }
+  .bact.del:hover { color: #c0392b; }
+
+  /* ── Modal overlay ────────────────────────────────────────────────────── */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(28,26,24,0.45);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface-alt);
+    border-radius: 4px;
+    padding: 26px 28px 22px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-md);
+  }
+
+  .modal-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .modal-rule { display: inline-block; width: 16px; height: 2px; background: var(--accent); flex-shrink: 0; }
+
+  .modal-title { font-size: 16px; font-weight: normal; color: var(--text); }
+
+  /* ── Form ─────────────────────────────────────────────────────────────── */
+  .fg { margin-bottom: 14px; }
+
+  .fl {
+    display: block;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+  }
+
+  .fi, .ft, .fs {
+    width: 100%;
+    padding: 9px 12px;
+    font-size: 14px;
+    font-family: Georgia, serif;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .fi:focus, .ft:focus, .fs:focus { border-color: var(--accent); }
+  .fi::placeholder, .ft::placeholder { color: var(--text-light); }
+
+  .ft { min-height: 120px; resize: vertical; line-height: 1.65; }
+
+  .fs {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='5'%3E%3Cpath d='M0 0l5 5 5-5z' fill='%237a7570'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+
+  .frow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* URL fetch row */
+  .url-row { display: flex; gap: 8px; align-items: flex-start; }
+  .url-row .fi { flex: 1; }
+
+  .fetch-btn {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12px;
+    padding: 0 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    height: 38px;
+  }
+
+  .fetch-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .fetch-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .fetch-status {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    color: var(--text-light);
+    font-style: italic;
+    margin-top: 4px;
+    min-height: 16px;
+  }
+
+  .fetch-status.err { color: var(--accent); }
+
+  /* Star rating input */
+  .star-row { display: flex; gap: 4px; }
+
+  .sbtn {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #d8d0c4;
+    transition: color 0.1s;
+    padding: 0;
+    line-height: 1;
+  }
+
+  .sbtn.on { color: var(--gold); }
+
+  /* Modal footer */
+  .modal-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-light);
+  }
+
+  .btn {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12px;
+    padding: 8px 18px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+  }
+
+  .btn-p { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-p:hover { background: #7e1a1a; }
+  .btn-s { background: none; color: var(--text-muted); border-color: var(--border); }
+  .btn-s:hover { color: var(--text); border-color: var(--text-muted); }
+
+  /* ── Book search ──────────────────────────────────────────────────────── */
+  .search-row { display: flex; gap: 8px; }
+  .search-row .fi { flex: 1; }
+
+  .search-btn {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12px;
+    padding: 0 16px;
+    height: 38px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .search-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .search-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .search-status {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    color: var(--text-light);
+    font-style: italic;
+    margin-top: 5px;
+    min-height: 16px;
+  }
+
+  .search-status.err { color: var(--accent); font-style: normal; }
+
+  .search-results {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .search-results::-webkit-scrollbar { width: 4px; }
+  .search-results::-webkit-scrollbar-track { background: transparent; }
+  .search-results::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .search-result {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 12px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    cursor: pointer;
+    background: var(--surface);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .search-result:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .sr-cover {
+    width: 36px;
+    height: 50px;
+    background: var(--accent-light);
+    border-radius: 2px;
+    flex-shrink: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sr-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .sr-cover-ph { font-size: 16px; color: var(--accent); opacity: 0.3; }
+
+  .sr-info { flex: 1; min-width: 0; }
+
+  .sr-title {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.35;
+    margin-bottom: 2px;
+  }
+
+  .sr-author {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .sr-year {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    color: var(--text-light);
+    margin-top: 2px;
+  }
+
+  .sr-arrow {
+    font-size: 14px;
+    color: var(--text-light);
+    flex-shrink: 0;
+  }
+
+  /* ── Book details step ────────────────────────────────────────────────── */
+  .selected-book-preview {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 12px;
+    background: var(--bg);
+    border-radius: var(--radius);
+    margin-bottom: 18px;
+    border: 1px solid var(--border-light);
+  }
+
+  .sbp-cover {
+    width: 40px;
+    height: 56px;
+    background: var(--accent-light);
+    border-radius: 2px;
+    flex-shrink: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sbp-cover img { width: 100%; height: 100%; object-fit: cover; }
+  .sbp-cover-ph { font-size: 18px; color: var(--accent); opacity: 0.3; }
+
+  .sbp-info { flex: 1; min-width: 0; }
+  .sbp-title { font-size: 14px; color: var(--text); line-height: 1.3; }
+  .sbp-author { font-size: 12px; color: var(--text-muted); font-style: italic; margin-top: 2px; }
+
+  .back-link {
+    background: none;
+    border: none;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 16px;
+    transition: color 0.15s;
+  }
+
+  .back-link:hover { color: var(--accent); }
+
+  /* ── Reader view ──────────────────────────────────────────────────────── */
+  .reader-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--surface);
+    z-index: 200;
+    overflow-y: auto;
+  }
+
+  .reader-overlay.open { display: block; }
+
+  .reader-inner {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 44px 24px 80px;
+  }
+
+  .reader-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 36px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .reader-back {
+    background: none;
+    border: none;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.15s;
+  }
+
+  .reader-back:hover { color: var(--text); }
+
+  .reader-ext {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    color: var(--text-light);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border);
+    transition: color 0.15s, border-color 0.15s;
+    display: none;
+  }
+
+  .reader-ext:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .reader-title {
+    font-size: 28px;
+    font-weight: normal;
+    line-height: 1.25;
+    margin-bottom: 10px;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+
+  .reader-meta {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12px;
+    color: var(--text-light);
+    font-style: italic;
+    margin-bottom: 32px;
+  }
+
+  .reader-body { font-size: 17px; line-height: 1.8; color: var(--text); }
+  .reader-body p { margin-bottom: 1.3em; }
+
+  /* ── Responsive ───────────────────────────────────────────────────────── */
+  @media (max-width: 860px) {
+    .container { padding: 0 20px 60px; }
+  }
+
+  @media (max-width: 500px) {
+    .frow { grid-template-columns: 1fr; }
+    .masthead { flex-direction: column; gap: 4px; }
+    .masthead-title { font-size: 22px; text-align: left; }
+    .masthead-tagline { text-align: left; }
+    .masthead-date, .masthead-tagline { min-width: 0; }
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Masthead -->
+  <header class="masthead">
+    <span class="masthead-date" id="masthead-date"></span>
+    <h1 class="masthead-title">Reading <em>Now</em></h1>
+    <span class="masthead-tagline">
+      <span>what are you reading?</span>
+      <button class="sync-btn" id="sync-btn" onclick="openSetup()" title="Sync settings">
+        <span class="sync-dot" id="sync-dot"></span>
+      </button>
+      <button class="about-link" onclick="openAbout()">About</button>
+    </span>
+  </header>
+
+  <!-- About overlay -->
+  <div class="about-overlay" id="about-overlay">
+    <div class="about-panel">
+      <button class="about-close" onclick="closeAbout()">×</button>
+      <div class="about-wordmark">Reading <em>Now</em></div>
+      <div class="about-body">
+        <p>This is a tool for the present tense.</p>
+        <p>It doesn't keep a trophy case. There are no yearly totals, no streaks, no social graphs, no reminders of how far behind you are. Reading isn't a performance, and this app doesn't treat it like one.</p>
+        <p>What it does: holds the articles you mean to read this week and keeps a quiet record of what you've been working through lately. Then it lets go. Articles disappear after sixty days. Your reading history fades after six months. What remains is only what matters right now.</p>
+        <p>The best reading life isn't measured. It's lived.</p>
+      </div>
+      <div class="about-footer">
+        <div class="about-stat">
+          <div class="about-stat-num">15</div>
+          <div class="about-stat-label">Article limit</div>
+        </div>
+        <div class="about-stat">
+          <div class="about-stat-num">60d</div>
+          <div class="about-stat-label">Article lifespan</div>
+        </div>
+        <div class="about-stat">
+          <div class="about-stat-num">6mo</div>
+          <div class="about-stat-label">Reading history</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sync setup overlay -->
+  <div class="setup-overlay" id="setup-overlay">
+    <div class="setup-panel">
+      <button class="setup-close" onclick="closeSetup()">×</button>
+      <div class="setup-wordmark">Reading <em>Now</em></div>
+      <div class="setup-subtitle">Sync across devices</div>
+      <div class="setup-body">
+        Enter your sync key to keep your reading list the same on every device. Use the same key on each device you want to sync. The key acts as your private password — pick anything you'll remember.
+      </div>
+      <div class="fg">
+        <label class="fl">Sync key</label>
+        <input type="text" class="fi" id="setup-key-input"
+               placeholder="e.g. my-reading-key-2024"
+               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+               onkeydown="if(event.key==='Enter') saveSetupKey()">
+        <div class="setup-status" id="setup-status"></div>
+      </div>
+      <div class="setup-foot">
+        <button class="setup-skip" onclick="closeSetup()">Use without syncing</button>
+        <button class="btn btn-p" onclick="saveSetupKey()">Save &amp; sync</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- Articles column -->
+    <section class="col-articles">
+      <div class="section-header">
+        <div class="section-label">
+          <span class="section-rule"></span>
+          <span class="section-title">Articles</span>
+        </div>
+        <div class="section-meta">
+          <span class="section-count" id="art-count">0 / 15</span>
+          <button class="add-btn" onclick="openArtModal()">+ add article</button>
+        </div>
+      </div>
+
+      <div class="cap-warning" id="cap-warn">
+        You're approaching your article limit. Consider reading or removing a few.
+      </div>
+
+      <ul class="article-list" id="art-list">
+        <li class="empty" id="art-empty">No articles saved yet.</li>
+      </ul>
+    </section>
+
+    <!-- Reading Log column -->
+    <section class="col-books">
+      <div class="section-header">
+        <div class="section-label">
+          <span class="section-rule"></span>
+          <span class="section-title">Reading Log</span>
+        </div>
+        <button class="add-btn" onclick="openBookModal()">+ add book</button>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="ftab active" onclick="setFilter('all',this)">All</button>
+        <button class="ftab" onclick="setFilter('reading',this)">Reading</button>
+        <button class="ftab" onclick="setFilter('finished',this)">Finished</button>
+      </div>
+
+      <ul class="book-list" id="book-list">
+        <li class="empty" id="book-empty">No books logged yet.</li>
+      </ul>
+    </section>
+
+  </div>
+</div>
+
+<!-- Article modal -->
+<div class="overlay" id="art-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-rule"></span>
+      <h2 class="modal-title" id="art-modal-title">Save an article</h2>
+    </div>
+    <input type="hidden" id="art-edit-id">
+
+    <div class="fg">
+      <label class="fl">URL</label>
+      <div class="url-row">
+        <input type="url" class="fi" id="art-url" placeholder="https://..." oninput="onUrlInput()">
+        <button class="fetch-btn" id="fetch-btn" onclick="fetchArticle()" disabled>Fetch</button>
+      </div>
+      <div class="fetch-status" id="fetch-status"></div>
+    </div>
+
+    <div class="fg">
+      <label class="fl">Title</label>
+      <input type="text" class="fi" id="art-title" placeholder="Article title">
+    </div>
+
+    <div class="fg">
+      <label class="fl">Source (optional)</label>
+      <input type="text" class="fi" id="art-source" placeholder="e.g. The Atlantic, Substack">
+    </div>
+
+    <div class="fg">
+      <label class="fl">Article text</label>
+      <textarea class="ft" id="art-text" placeholder="Paste article text, or use Fetch to pull it automatically…"></textarea>
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn btn-s" onclick="closeArtModal()">Cancel</button>
+      <button class="btn btn-p" onclick="saveArticle()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Book modal -->
+<div class="overlay" id="book-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-rule"></span>
+      <h2 class="modal-title" id="book-modal-title">Add a book</h2>
+    </div>
+    <input type="hidden" id="book-edit-id">
+
+    <!-- Step 1: Search -->
+    <div id="book-search-step">
+      <div class="fg">
+        <label class="fl">Search by title or author</label>
+        <div class="search-row">
+          <input type="text" class="fi" id="book-search-input"
+                 placeholder="e.g. The Road, Cormac McCarthy…"
+                 oninput="onSearchInput()"
+                 onpaste="onSearchPaste()"
+                 onkeydown="if(event.key==='Enter') searchBooks()">
+          <button class="search-btn" id="search-btn" onclick="searchBooks()" disabled>Search</button>
+        </div>
+        <div class="search-status" id="search-status"></div>
+      </div>
+      <div class="search-results" id="search-results"></div>
+    </div>
+
+    <!-- Step 2: Details -->
+    <div id="book-details-step" style="display:none">
+      <button class="back-link" id="back-to-search" onclick="showBookSearch()">← Back to search</button>
+
+      <div class="selected-book-preview" id="book-preview">
+        <div class="sbp-cover" id="sbp-cover">
+          <span class="sbp-cover-ph">◻</span>
+        </div>
+        <div class="sbp-info">
+          <div class="sbp-title" id="sbp-title"></div>
+          <div class="sbp-author" id="sbp-author"></div>
+        </div>
+      </div>
+
+      <div class="frow">
+        <div class="fg">
+          <label class="fl">Status</label>
+          <select class="fs" id="book-status">
+            <option value="reading">Currently reading</option>
+            <option value="finished">Finished</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="fl">Progress (optional)</label>
+          <input type="text" class="fi" id="book-progress" placeholder="e.g. page 80, ch. 4">
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Rating</label>
+        <div class="star-row" id="star-row">
+          <button class="sbtn" onclick="setRating(1)">★</button>
+          <button class="sbtn" onclick="setRating(2)">★</button>
+          <button class="sbtn" onclick="setRating(3)">★</button>
+          <button class="sbtn" onclick="setRating(4)">★</button>
+          <button class="sbtn" onclick="setRating(5)">★</button>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <button class="btn btn-s" onclick="closeBookModal()">Cancel</button>
+        <button class="btn btn-p" onclick="saveBook()">Save</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Reader -->
+<div class="reader-overlay" id="reader">
+  <div class="reader-inner">
+    <nav class="reader-nav">
+      <button class="reader-back" onclick="closeReader()">← Back to articles</button>
+      <a class="reader-ext" id="reader-ext" href="#" target="_blank" rel="noopener noreferrer">Open original ↗</a>
+    </nav>
+    <h1 class="reader-title" id="reader-title"></h1>
+    <p class="reader-meta" id="reader-meta"></p>
+    <div class="reader-body" id="reader-body"></div>
+  </div>
+</div>
+
+<script>
+// ── Constants ─────────────────────────────────────────────────────────────────
+const ART_MAX    = 15;
+const ART_TTL    = 60  * 86400000;
+const LOG_WIN    = 180 * 86400000;
+const SYNC_URL   = '/api/data';
+const KEY_STORE  = 'rn_app_key';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let articles = [], books = [], bookFilter = 'all', rating = 0;
+let selectedBook = null;
+let searchDebounce = null;
+let _artSortable = null;
+
+// ── Sync key ──────────────────────────────────────────────────────────────────
+function getKey() { return localStorage.getItem(KEY_STORE) || ''; }
+function setKey(k) { localStorage.setItem(KEY_STORE, k); }
+
+// ── Sync dot ──────────────────────────────────────────────────────────────────
+function setSyncDot(state) {
+  const dot = document.getElementById('sync-dot');
+  dot.className = 'sync-dot' + (state ? ' ' + state : '');
+}
+
+// ── Cloud I/O ─────────────────────────────────────────────────────────────────
+async function cloudLoad() {
+  const key = getKey();
+  if (!key) return null;
+  try {
+    const res = await fetch(SYNC_URL, {
+      headers: { 'X-App-Key': key }
+    });
+    if (res.status === 401) { setSyncDot('error'); return null; }
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
+
+async function cloudSave(data) {
+  const key = getKey();
+  if (!key) return false;
+  try {
+    const res = await fetch(SYNC_URL, {
+      method: 'POST',
+      headers: { 'X-App-Key': key, 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
+// ── Persistence ───────────────────────────────────────────────────────────────
+function loadLocal() {
+  try {
+    articles = JSON.parse(localStorage.getItem('rn_art')  || '[]');
+    books    = JSON.parse(localStorage.getItem('rn_book') || '[]');
+  } catch { articles = []; books = []; }
+}
+
+function saveLocal() {
+  localStorage.setItem('rn_art',  JSON.stringify(articles));
+  localStorage.setItem('rn_book', JSON.stringify(books));
+}
+
+async function load() {
+  loadLocal();
+
+  const key = getKey();
+  if (!key) { setSyncDot(''); return; }
+
+  setSyncDot('syncing');
+  const data = await cloudLoad();
+  if (data) {
+    articles = data.articles || [];
+    books    = data.books    || [];
+    saveLocal();
+    setSyncDot('ok');
+  } else {
+    setSyncDot('error');
+  }
+}
+
+async function persist() {
+  saveLocal();
+
+  const key = getKey();
+  if (!key) return;
+
+  setSyncDot('syncing');
+  const ok = await cloudSave({ articles, books });
+  setSyncDot(ok ? 'ok' : 'error');
+}
+
+// ── Cleanup ───────────────────────────────────────────────────────────────────
+function cleanup() {
+  const now = Date.now();
+  articles = articles.filter(a => now - a.ts < ART_TTL);
+  books    = books.filter(b => b.status === 'reading' || now - b.ts < LOG_WIN);
+  persist();
+}
+
+// ── Masthead ──────────────────────────────────────────────────────────────────
+function setMastDate() {
+  document.getElementById('masthead-date').textContent =
+    new Date().toLocaleDateString('en-US', {
+      weekday:'long', month:'long', day:'numeric', year:'numeric'
+    }).toUpperCase();
+}
+
+// ── Render articles ───────────────────────────────────────────────────────────
+function renderArticles() {
+  const list  = document.getElementById('art-list');
+  const empty = document.getElementById('art-empty');
+  const ct    = document.getElementById('art-count');
+  const warn  = document.getElementById('cap-warn');
+  const n     = articles.length;
+
+  ct.textContent = `${n} / ${ART_MAX}`;
+  ct.className   = 'section-count' + (n >= 12 ? ' warn' : '');
+  warn.className = 'cap-warning' + (n >= 12 ? ' show' : '');
+
+  list.querySelectorAll('.article-card').forEach(e => e.remove());
+
+  if (!n) { empty.style.display = ''; return; }
+  empty.style.display = 'none';
+
+  const now = Date.now();
+  articles.forEach((a, i) => {
+    const days = Math.max(1, Math.ceil((a.ts + ART_TTL - now) / 86400000));
+    const soon = days <= 14;
+
+    const li = document.createElement('li');
+    li.className  = 'article-card';
+    li.dataset.id = a.id;
+    li.innerHTML  = `
+      <span class="drag-handle" title="Drag to reorder">⠿</span>
+      <span class="article-num">${String(i+1).padStart(2,'0')}</span>
+      <div class="article-body">
+        <div class="article-title">${esc(a.title)}</div>
+        <div class="article-meta">
+          ${a.source ? `<span class="article-source">${esc(a.source)}</span>` : ''}
+          <span>Saved ${fmt(a.ts,'short')}</span>
+          <span class="expiry-badge${soon?' soon':''}">Expires in ${days}d</span>
+        </div>
+      </div>
+      <button class="article-del" onclick="delArt('${a.id}',event)" title="Remove">×</button>
+    `;
+    li.addEventListener('click', e => {
+      if (e.target.classList.contains('article-del') ||
+          e.target.classList.contains('drag-handle')) return;
+      openReader(a);
+    });
+    list.appendChild(li);
+  });
+
+  initArticleSortable();
+}
+
+function initArticleSortable() {
+  if (_artSortable) { _artSortable.destroy(); _artSortable = null; }
+  const list = document.getElementById('art-list');
+  if (!list.querySelector('.article-card')) return;
+
+  _artSortable = Sortable.create(list, {
+    handle:      '.drag-handle',
+    animation:   180,
+    easing:      'cubic-bezier(0.25, 1, 0.5, 1)',
+    ghostClass:  'sortable-ghost',
+    chosenClass: 'sortable-chosen',
+    dragClass:   'sortable-drag',
+    onEnd() {
+      const ids = Array.from(list.querySelectorAll('.article-card'))
+                       .map(el => el.dataset.id);
+      articles = ids.map(id => articles.find(a => a.id === id)).filter(Boolean);
+      persist();
+      list.querySelectorAll('.article-card').forEach((card, i) => {
+        card.querySelector('.article-num').textContent = String(i+1).padStart(2,'0');
+      });
+    }
+  });
+}
+
+// ── Render books ──────────────────────────────────────────────────────────────
+function renderBooks() {
+  const list  = document.getElementById('book-list');
+  const empty = document.getElementById('book-empty');
+
+  list.querySelectorAll('.book-card').forEach(e => e.remove());
+
+  const filtered = books.filter(b => bookFilter === 'all' || b.status === bookFilter);
+  if (!filtered.length) { empty.style.display = ''; return; }
+  empty.style.display = 'none';
+
+  [...filtered].sort((a,b) => {
+    if (a.status==='reading' && b.status!=='reading') return -1;
+    if (a.status!=='reading' && b.status==='reading') return 1;
+    return b.ts - a.ts;
+  }).forEach(b => {
+    const starsHtml = Array.from({length:5}, (_,i) =>
+      `<span class="star${i < b.rating ? ' on':''}">★</span>`
+    ).join('');
+
+    const coverSrc = b.coverUrl ||
+      (b.coverId ? `https://covers.openlibrary.org/b/id/${b.coverId}-M.jpg` :
+      b.isbn     ? `https://covers.openlibrary.org/b/isbn/${esc(b.isbn)}-M.jpg` : '');
+
+    const goodreadsUrl = `https://www.goodreads.com/search?q=${encodeURIComponent((b.title + ' ' + (b.author||'')).trim())}`;
+
+    const li = document.createElement('li');
+    li.className  = 'book-card';
+    li.dataset.id = b.id;
+    li.title      = 'View on Goodreads';
+    li.innerHTML  = `
+      <div class="book-cover">
+        ${coverSrc
+          ? `<img src="${coverSrc}" onerror="this.style.display='none';this.nextElementSibling.style.display=''" alt="">
+             <span class="cover-ph" style="display:none">◻</span>`
+          : `<span class="cover-ph">◻</span>`}
+      </div>
+      <div class="book-info">
+        <div class="book-title">${esc(b.title)}</div>
+        ${b.author ? `<div class="book-author">${esc(b.author)}</div>` : ''}
+        <div class="book-row">
+          <span class="status-pill${b.status==='finished'?' done':''}">${b.status==='reading'?'Reading':'Finished'}</span>
+          ${b.progress ? `<span class="book-progress">${esc(b.progress)}</span>` : ''}
+          ${b.rating   ? `<div class="stars">${starsHtml}</div>` : ''}
+        </div>
+      </div>
+      <div class="book-actions">
+        <button class="bact" onclick="editBook('${b.id}',event)">edit</button>
+        <button class="bact del" onclick="delBook('${b.id}',event)">×</button>
+      </div>
+    `;
+    li.addEventListener('click', e => {
+      if (e.target.closest('.book-actions')) return;
+      window.open(goodreadsUrl, '_blank', 'noopener,noreferrer');
+    });
+    list.appendChild(li);
+  });
+}
+
+// ── Article modal ─────────────────────────────────────────────────────────────
+function openArtModal(id) {
+  const eid = id || '';
+  document.getElementById('art-edit-id').value = eid;
+  document.getElementById('art-modal-title').textContent = eid ? 'Edit article' : 'Save an article';
+  document.getElementById('fetch-status').textContent = '';
+  document.getElementById('fetch-status').className = 'fetch-status';
+
+  let url='', title='', src='', text='';
+  if (eid) {
+    const a = articles.find(x => x.id===eid);
+    if (a) { url=a.url||''; title=a.title||''; src=a.source||''; text=a.text||''; }
+  }
+
+  document.getElementById('art-url').value    = url;
+  document.getElementById('art-title').value  = title;
+  document.getElementById('art-source').value = src;
+  document.getElementById('art-text').value   = text;
+  document.getElementById('fetch-btn').disabled = !url;
+
+  document.getElementById('art-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('art-url').focus(), 50);
+}
+
+function closeArtModal() {
+  document.getElementById('art-overlay').classList.remove('open');
+}
+
+function onUrlInput() {
+  document.getElementById('fetch-btn').disabled =
+    !document.getElementById('art-url').value.trim();
+}
+
+async function fetchArticle() {
+  const url = document.getElementById('art-url').value.trim();
+  if (!url) return;
+
+  const btn    = document.getElementById('fetch-btn');
+  const status = document.getElementById('fetch-status');
+  btn.disabled = true; btn.textContent = '…';
+  status.textContent = 'Fetching article…'; status.className = 'fetch-status';
+
+  try {
+    const res = await fetch(`https://r.jina.ai/${url}`, {
+      headers: {
+        'Accept': 'text/plain',
+        'X-No-Cache': 'true',
+        'X-Remove-Selector': 'header,footer,nav,aside,.nav,.footer,.header,.sidebar,.social,.share,.related,.comments,.newsletter,.ad,.advertisement,.menu,.cookie,.banner,.popup',
+        'X-Target-Selector': 'article,main,.article-body,.post-content,.story-body,.entry-content,.article-content,.post-body,[itemprop="articleBody"]',
+      }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const raw          = await res.text();
+    const titleMatch   = raw.match(/^Title:\s*(.+)$/m);
+    const contentMatch = raw.match(/Markdown Content:\s*\n([\s\S]+)/);
+    const parsedTitle  = titleMatch ? titleMatch[1].trim() : '';
+    const parsedText   = cleanArticleText(contentMatch ? contentMatch[1] : raw);
+
+    let autoSource = '';
+    try { autoSource = new URL(url).hostname.replace(/^www\./, ''); } catch {}
+
+    if (parsedTitle && !document.getElementById('art-title').value.trim())
+      document.getElementById('art-title').value = parsedTitle;
+    if (parsedText)
+      document.getElementById('art-text').value = parsedText;
+    if (autoSource && !document.getElementById('art-source').value.trim())
+      document.getElementById('art-source').value = autoSource;
+
+    status.textContent = parsedText
+      ? 'Article fetched. Review the text below before saving.'
+      : 'Fetched, but no text found — try pasting manually.';
+  } catch {
+    status.textContent = 'Could not fetch article. Paste the text manually.';
+    status.className = 'fetch-status err';
+  }
+
+  btn.textContent = 'Fetch'; btn.disabled = false;
+}
+
+function cleanArticleText(raw) {
+  let text = raw
+    .replace(/!\[.*?\]\(.*?\)/g, '')
+    .replace(/\[([^\]\n]*)\]\([^)\n]+\)/g, '$1')
+    .replace(/\[\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]*)\]\[[^\]]*\]/g, '$1')
+    .replace(/^\s*#{1,6}\s*/gm, '')
+    .replace(/\*\*([^*\n]+)\*\*/g, '$1')
+    .replace(/\*([^*\n]+)\*/g, '$1')
+    .replace(/__([^_\n]+)__/g, '$1')
+    .replace(/_([^_\n]+)_/g, '$1')
+    .replace(/`{1,3}[^`]*`{1,3}/g, '')
+    .replace(/^\s*>+\s*/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/^\s*\d+\.\s+/gm, '')
+    .replace(/\|[^\n]+\|/g, '')
+    .replace(/^[-_*]{3,}\s*$/gm, '')
+    .replace(/^={3,}\s*$/gm, '')
+    .replace(/https?:\/\/\S+/g, '')
+    .replace(/\\\S/g, s => s[1]);
+
+  const junk = [
+    /^skip to/i, /^(support us|donate|subscribe now|sign up|log in|sign in|create account|register)/i,
+    /^(share|share on|share via|tweet|post to|send to|email this)/i,
+    /^(facebook|twitter|x\.com|linkedin|instagram|youtube|tiktok|reddit|pinterest|mastodon|whatsapp|telegram)/i,
+    /^(home|about|contact|jobs|careers|press|advertise|legal|privacy|terms|cookie|sitemap)$/i,
+    /^(all rights reserved|copyright|\xA9\s*\d)/i,
+    /^(follow us|follow on|find us on)/i,
+    /^(menu|search|close|open|toggle)$/i,
+    /^(related (stories|articles|posts|reads)|more from|you might (also )?like|recommended|also read|read (more|next|also))/i,
+    /^(comments?|leave a comment|add a comment|join the discussion|most popular|trending now)/i,
+    /^(newsletter|get the latest|sign up for|stay informed|get updates)/i,
+    /^(print|save article|bookmark|copy link|republish)$/i,
+    /^advertisement$/i, /^(loading|please wait|please enable javascript)/i,
+    /^\d+\s*(min(ute)?s?|hour|hr)\s+read$/i,
+    /^by\s+[\w\s]{2,40}$/i,
+    /^(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d/i,
+  ];
+
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0)
+    .filter(l => !junk.some(p => p.test(l)))
+    .filter(l => l.length >= 30 || /[.?!:;,"]$/.test(l) || /^\d{4}$/.test(l));
+
+  let start = 0;
+  for (let i = 0; i < Math.min(lines.length, 25); i++) {
+    if (lines[i].length > 120) { start = i; break; }
+  }
+
+  const endSignals = [
+    /^(related|more from|you might|also like|most popular|trending|recommended|next article|previous article)/i,
+    /^(newsletter|sign up|get the latest|stay informed)/i,
+    /^(comments?|discussion|leave a reply)/i,
+    /^(about the author|about this article)/i,
+  ];
+
+  let end = lines.length;
+  for (let i = start + 3; i < lines.length; i++) {
+    if (endSignals.some(p => p.test(lines[i]))) { end = i; break; }
+  }
+
+  return lines.slice(start, end).join('\n\n').trim();
+}
+
+function saveArticle() {
+  const title = document.getElementById('art-title').value.trim();
+  if (!title) { document.getElementById('art-title').focus(); return; }
+
+  const eid   = document.getElementById('art-edit-id').value;
+  const patch = {
+    title,
+    url:    document.getElementById('art-url').value.trim(),
+    source: document.getElementById('art-source').value.trim(),
+    text:   document.getElementById('art-text').value.trim(),
+  };
+
+  if (eid) {
+    const i = articles.findIndex(a => a.id===eid);
+    if (i>-1) articles[i] = { ...articles[i], ...patch };
+  } else {
+    if (articles.length >= ART_MAX) {
+      alert('15-article limit reached. Remove one before adding more.');
+      return;
+    }
+    articles.unshift({ id: uid(), ts: Date.now(), ...patch });
+  }
+
+  persist(); renderArticles(); closeArtModal();
+}
+
+function delArt(id, e) {
+  e.stopPropagation();
+  articles = articles.filter(a => a.id!==id);
+  persist(); renderArticles();
+}
+
+// ── Book modal ────────────────────────────────────────────────────────────────
+function openBookModal(id) {
+  rating = 0;
+  const eid = id || '';
+  document.getElementById('book-edit-id').value = eid;
+
+  if (eid) {
+    const b = books.find(x => x.id===eid);
+    document.getElementById('book-modal-title').textContent = 'Edit book';
+    selectedBook = b ? { title: b.title, author: b.author, isbn: b.isbn, coverId: b.coverId } : null;
+    showBookDetails(b || null, true);
+  } else {
+    document.getElementById('book-modal-title').textContent = 'Add a book';
+    showBookSearch();
+  }
+
+  document.getElementById('book-overlay').classList.add('open');
+}
+
+function closeBookModal() {
+  document.getElementById('book-overlay').classList.remove('open');
+}
+
+function showBookSearch() {
+  document.getElementById('book-search-step').style.display  = '';
+  document.getElementById('book-details-step').style.display = 'none';
+  document.getElementById('book-search-input').value = '';
+  document.getElementById('search-results').innerHTML = '';
+  document.getElementById('search-status').textContent = '';
+  document.getElementById('search-status').className = 'search-status';
+  document.getElementById('search-btn').disabled = true;
+  selectedBook = null;
+  setTimeout(() => document.getElementById('book-search-input').focus(), 50);
+}
+
+function showBookDetails(prefill, isEdit) {
+  document.getElementById('book-search-step').style.display  = 'none';
+  document.getElementById('book-details-step').style.display = '';
+  document.getElementById('back-to-search').style.display    = isEdit ? 'none' : '';
+
+  const cover   = document.getElementById('sbp-cover');
+  const titleEl = document.getElementById('sbp-title');
+  const authEl  = document.getElementById('sbp-author');
+
+  const coverSrc = prefill?.coverUrl ||
+    (prefill?.coverId ? `https://covers.openlibrary.org/b/id/${prefill.coverId}-M.jpg` :
+    prefill?.isbn     ? `https://covers.openlibrary.org/b/isbn/${esc(prefill.isbn)}-M.jpg` : '');
+
+  if (coverSrc) {
+    cover.innerHTML = `<img src="${coverSrc}"
+      onerror="this.style.display='none';this.nextElementSibling.style.display=''"
+      alt=""><span class="sbp-cover-ph" style="display:none">◻</span>`;
+  } else {
+    cover.innerHTML = `<span class="sbp-cover-ph">◻</span>`;
+  }
+
+  titleEl.textContent = prefill?.title  || '';
+  authEl.textContent  = prefill?.author || '';
+
+  document.getElementById('book-status').value   = prefill?.status   || 'reading';
+  document.getElementById('book-progress').value = prefill?.progress || '';
+  rating = prefill?.rating || 0;
+  updateStars(rating);
+}
+
+function onSearchInput() {
+  const q = document.getElementById('book-search-input').value.trim();
+  document.getElementById('search-btn').disabled = !q;
+  clearTimeout(searchDebounce);
+  if (q.length >= 3) searchDebounce = setTimeout(searchBooks, 400);
+}
+
+function onSearchPaste() {
+  setTimeout(() => {
+    const q = document.getElementById('book-search-input').value.trim();
+    document.getElementById('search-btn').disabled = !q;
+    clearTimeout(searchDebounce);
+    if (q.length >= 3) searchDebounce = setTimeout(searchBooks, 300);
+  }, 10);
+}
+
+async function searchBooks() {
+  const q = document.getElementById('book-search-input').value.trim();
+  if (!q) return;
+
+  const statusEl  = document.getElementById('search-status');
+  const resultsEl = document.getElementById('search-results');
+  const btn       = document.getElementById('search-btn');
+
+  btn.disabled = true;
+  btn.textContent = '…';
+  statusEl.textContent = 'Searching…';
+  statusEl.className   = 'search-status';
+  resultsEl.innerHTML  = '';
+
+  let books_found = [];
+
+  try {
+    const gbRes = await fetch(
+      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=15`,
+      { signal: AbortSignal.timeout(7000) }
+    );
+    if (gbRes.ok) {
+      const gbData = await gbRes.json();
+      if (!gbData.error && gbData.items?.length) {
+        books_found = gbData.items
+          .filter(i => i.volumeInfo)
+          .map(item => {
+            const info = item.volumeInfo;
+            return {
+              title:    info.title || 'Untitled',
+              author:   (info.authors || []).join(', '),
+              year:     (info.publishedDate || '').slice(0, 4),
+              coverUrl: info.imageLinks?.thumbnail?.replace('http://', 'https://') || '',
+              isbn:     (info.industryIdentifiers || [])
+                          .find(i => i.type === 'ISBN_13')?.identifier ||
+                        (info.industryIdentifiers || [])
+                          .find(i => i.type === 'ISBN_10')?.identifier || '',
+            };
+          });
+      }
+    }
+  } catch (e) {
+    console.warn('Google Books unavailable:', e.message);
+  }
+
+  if (!books_found.length) {
+    try {
+      statusEl.textContent = 'Trying alternate source…';
+      const olRes = await fetch(
+        `https://openlibrary.org/search.json?title=${encodeURIComponent(q)}&limit=15&fields=title,author_name,isbn,cover_i,first_publish_year`,
+        { signal: AbortSignal.timeout(7000) }
+      );
+      if (olRes.ok) {
+        const olData = await olRes.json();
+        books_found = (olData.docs || []).map(doc => ({
+          title:    doc.title || 'Untitled',
+          author:   (doc.author_name || []).join(', '),
+          year:     String(doc.first_publish_year || ''),
+          coverUrl: doc.cover_i
+                      ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
+                      : '',
+          isbn:     (doc.isbn || [])[0] || '',
+        }));
+      }
+    } catch (e) {
+      console.warn('Open Library unavailable:', e.message);
+    }
+  }
+
+  if (!books_found.length) {
+    statusEl.textContent = 'No results found. Try different search terms.';
+    statusEl.className   = 'search-status err';
+  } else {
+    statusEl.textContent = '';
+    books_found.forEach(book => {
+      const card = document.createElement('div');
+      card.className = 'search-result';
+      card.innerHTML = `
+        <div class="sr-cover">
+          ${book.coverUrl
+            ? `<img src="${esc(book.coverUrl)}" onerror="this.style.display='none';this.nextElementSibling.style.display=''" alt="">
+               <span class="sr-cover-ph" style="display:none">◻</span>`
+            : `<span class="sr-cover-ph">◻</span>`}
+        </div>
+        <div class="sr-info">
+          <div class="sr-title">${esc(book.title)}</div>
+          ${book.author ? `<div class="sr-author">${esc(book.author)}</div>` : ''}
+          ${book.year   ? `<div class="sr-year">${esc(book.year)}</div>`   : ''}
+        </div>
+        <span class="sr-arrow">→</span>
+      `;
+      card.addEventListener('click', () => {
+        selectedBook = { ...book, coverId: null };
+        showBookDetails(selectedBook, false);
+      });
+      resultsEl.appendChild(card);
+    });
+  }
+
+  btn.textContent = 'Search';
+  btn.disabled    = false;
+}
+
+function setRating(v) { rating = v; updateStars(v); }
+
+function updateStars(v) {
+  document.querySelectorAll('.sbtn').forEach((b,i) => {
+    b.className = 'sbtn' + (i < v ? ' on' : '');
+  });
+}
+
+function saveBook() {
+  if (!selectedBook?.title) return;
+
+  const eid  = document.getElementById('book-edit-id').value;
+  const data = {
+    title:    selectedBook.title,
+    author:   selectedBook.author   || '',
+    isbn:     selectedBook.isbn     || '',
+    coverUrl: selectedBook.coverUrl || '',
+    coverId:  selectedBook.coverId  || null,
+    status:   document.getElementById('book-status').value,
+    progress: document.getElementById('book-progress').value.trim(),
+    rating,
+  };
+
+  if (eid) {
+    const i = books.findIndex(b => b.id===eid);
+    if (i>-1) books[i] = { ...books[i], ...data };
+  } else {
+    books.push({ id: uid(), ts: Date.now(), ...data });
+  }
+
+  persist(); renderBooks(); closeBookModal();
+}
+
+function delBook(id, e) {
+  e.stopPropagation();
+  books = books.filter(b => b.id!==id);
+  persist(); renderBooks();
+}
+
+function editBook(id, e) {
+  e.stopPropagation();
+  openBookModal(id);
+}
+
+// ── Filter ────────────────────────────────────────────────────────────────────
+function setFilter(f, btn) {
+  bookFilter = f;
+  document.querySelectorAll('.ftab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderBooks();
+}
+
+// ── Reader ────────────────────────────────────────────────────────────────────
+function openReader(a) {
+  document.getElementById('reader-title').textContent = a.title;
+  const src = a.source ? a.source + ' · ' : '';
+  document.getElementById('reader-meta').textContent = src + 'Saved ' + fmt(a.ts, 'long');
+
+  const ext = document.getElementById('reader-ext');
+  if (a.url) { ext.href = a.url; ext.style.display = ''; }
+  else        { ext.style.display = 'none'; }
+
+  const body = document.getElementById('reader-body');
+  if (a.text) {
+    const cleaned = a.text
+      .replace(/\[([^\]\n]*)\]\([^)\n]+\)/g, '$1')
+      .replace(/\[\]\([^)]*\)/g, '')
+      .replace(/!\[.*?\]\(.*?\)/g, '')
+      .replace(/\*\*([^*\n]+)\*\*/g, '$1')
+      .replace(/\*([^*\n]+)\*/g, '$1')
+      .replace(/^#{1,6}\s*/gm, '')
+      .replace(/https?:\/\/\S+/g, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
+    body.innerHTML = cleaned
+      .split(/\n{2,}/)
+      .map(p => p.trim()).filter(p => p.length > 0)
+      .map(p => `<p>${esc(p).replace(/\n/g,'<br>')}</p>`)
+      .join('');
+  } else if (a.url) {
+    body.innerHTML = `<p style="color:var(--text-light);font-style:italic">No text saved. Use the link above to open the original.</p>`;
+  } else {
+    body.innerHTML = `<p style="color:var(--text-light);font-style:italic">No content saved for this article.</p>`;
+  }
+
+  document.getElementById('reader').classList.add('open');
+}
+
+function closeReader() {
+  document.getElementById('reader').classList.remove('open');
+}
+
+// ── Setup overlay ─────────────────────────────────────────────────────────────
+function openSetup() {
+  document.getElementById('setup-key-input').value = getKey();
+  document.getElementById('setup-status').textContent = '';
+  document.getElementById('setup-status').className = 'setup-status';
+  document.getElementById('setup-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('setup-key-input').focus(), 50);
+}
+
+function closeSetup() {
+  document.getElementById('setup-overlay').classList.remove('open');
+}
+
+async function saveSetupKey() {
+  const key = document.getElementById('setup-key-input').value.trim();
+  const statusEl = document.getElementById('setup-status');
+
+  if (!key) {
+    statusEl.textContent = 'Please enter a sync key.';
+    statusEl.className = 'setup-status err';
+    return;
+  }
+
+  statusEl.textContent = 'Connecting…';
+  statusEl.className = 'setup-status';
+
+  // Test the key by trying to load
+  setKey(key);
+  setSyncDot('syncing');
+
+  try {
+    const res = await fetch(SYNC_URL, { headers: { 'X-App-Key': key } });
+    if (res.status === 401) {
+      statusEl.textContent = 'Invalid key — access denied.';
+      statusEl.className = 'setup-status err';
+      setSyncDot('error');
+      return;
+    }
+    if (res.ok) {
+      const data = await res.json();
+      // Merge cloud data with local (cloud wins if non-empty)
+      if ((data.articles && data.articles.length) || (data.books && data.books.length)) {
+        articles = data.articles || articles;
+        books    = data.books    || books;
+        saveLocal();
+        renderArticles();
+        renderBooks();
+      } else {
+        // First device: push local data up to cloud
+        await cloudSave({ articles, books });
+      }
+      setSyncDot('ok');
+      statusEl.textContent = 'Synced.';
+      statusEl.className = 'setup-status ok';
+      setTimeout(closeSetup, 900);
+    } else {
+      throw new Error('HTTP ' + res.status);
+    }
+  } catch {
+    // Could not reach server — save key anyway, will sync when online
+    setSyncDot('error');
+    statusEl.textContent = 'Could not reach sync server. Key saved — will retry automatically.';
+    statusEl.className = 'setup-status err';
+    setTimeout(closeSetup, 2000);
+  }
+}
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmt(ts, style) {
+  const o = style==='long'
+    ? { month:'long',  day:'numeric', year:'numeric' }
+    : { month:'short', day:'numeric' };
+  return new Date(ts).toLocaleDateString('en-US', o);
+}
+
+// ── Keyboard ──────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeReader(); closeArtModal(); closeBookModal(); closeAbout(); closeSetup();
+  }
+});
+
+document.getElementById('about-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeAbout();
+});
+
+document.getElementById('setup-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeSetup();
+});
+
+['art-overlay','book-overlay'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+});
+
+// ── About ─────────────────────────────────────────────────────────────────────
+function openAbout() {
+  document.getElementById('about-overlay').classList.add('open');
+}
+
+function closeAbout() {
+  document.getElementById('about-overlay').classList.remove('open');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+setMastDate();
+
+(async () => {
+  await load();
+  cleanup();
+  renderArticles();
+  renderBooks();
+
+  // Show setup on very first visit (no key set)
+  if (!getKey()) {
+    setTimeout(openSetup, 600);
+  }
+})();
+</script>
+</body>
+</html>
