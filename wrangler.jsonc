@@ -1,12 +1,23 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "reading-now",
+  "main": "worker.js",
   "compatibility_date": "2026-04-27",
   "observability": {
     "enabled": true
   },
   "assets": {
-    "directory": "."
+    "directory": ".",
+    "binding": "ASSETS"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "RN_DATA",
+      "id": "9b659f7852c94399b443af3786b76d2e"
+    }
+  ],
+  "vars": {
+    "APP_KEY": "rn-sync-2026"
   },
   "compatibility_flags": [
     "nodejs_compat"
