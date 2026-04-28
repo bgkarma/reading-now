@@ -1048,6 +1048,87 @@
   .reader-body { font-size: 17px; line-height: 1.8; color: var(--text); }
   .reader-body p { margin-bottom: 1.3em; }
 
+  /* ── Dark mode ───────────────────────────────────────────────────────── */
+  [data-theme="dark"] {
+    --bg:           #13111e;
+    --surface:      #1c1929;
+    --surface-alt:  #231f32;
+    --text:         #e6e2d8;
+    --text-muted:   #9490a0;
+    --text-light:   #5a566a;
+    --border:       #2c2938;
+    --border-light: #221f2e;
+    --accent-light: #2a1a1a;
+    --green-bg:     #0f2010;
+    --shadow-sm:    0 1px 3px rgba(0,0,0,0.35);
+    --shadow-md:    0 6px 24px rgba(0,0,0,0.55);
+  }
+
+  /* ── Theme toggle ─────────────────────────────────────────────────────── */
+  .theme-toggle {
+    background: var(--border);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    width: 46px;
+    height: 24px;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    padding: 0 5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .theme-toggle:hover { border-color: var(--text-muted); }
+
+  .theme-icon {
+    font-size: 10px;
+    line-height: 1;
+    user-select: none;
+    position: relative;
+    z-index: 1;
+  }
+
+  .theme-icon-sun  { color: var(--gold); }
+  .theme-icon-moon { color: var(--text-light); }
+
+  .theme-knob {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--surface-alt);
+    left: 2px;
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  }
+
+  [data-theme="dark"] .theme-knob { transform: translateX(22px); }
+
+  /* ── Refresh button ───────────────────────────────────────────────────── */
+  .refresh-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+    color: var(--text-light);
+    padding: 2px 3px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    transition: color 0.15s;
+  }
+
+  .refresh-btn:hover { color: var(--accent); }
+  .refresh-btn.spinning { animation: spin 0.55s linear; }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
   /* ── Responsive ───────────────────────────────────────────────────────── */
   @media (max-width: 860px) {
     .container { padding: 0 20px 60px; }
@@ -1061,6 +1142,13 @@
     .masthead-date, .masthead-tagline { min-width: 0; }
   }
 </style>
+<script>
+  // Apply saved theme before first paint to avoid flash
+  (function() {
+    if (localStorage.getItem('rn_theme') === 'dark')
+      document.documentElement.setAttribute('data-theme', 'dark');
+  })();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 </head>
 <body>
@@ -1073,8 +1161,14 @@
     <h1 class="masthead-title">Reading <em>Now</em></h1>
     <span class="masthead-tagline">
       <span>what are you reading?</span>
+      <button class="refresh-btn" id="refresh-btn" onclick="manualRefresh()" title="Refresh">↻</button>
       <button class="sync-btn" id="sync-btn" onclick="openSetup()" title="Sync settings">
         <span class="sync-dot" id="sync-dot"></span>
+      </button>
+      <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">
+        <span class="theme-icon theme-icon-sun">☀</span>
+        <span class="theme-icon theme-icon-moon">☽</span>
+        <span class="theme-knob"></span>
       </button>
       <button class="about-link" onclick="openAbout()">About</button>
     </span>
@@ -2111,6 +2205,27 @@ function openAbout() {
 
 function closeAbout() {
   document.getElementById('about-overlay').classList.remove('open');
+}
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+function applyTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  localStorage.setItem('rn_theme', dark ? 'dark' : 'light');
+}
+
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  applyTheme(!isDark);
+}
+
+// ── Refresh ───────────────────────────────────────────────────────────────────
+async function manualRefresh() {
+  const btn = document.getElementById('refresh-btn');
+  btn.classList.add('spinning');
+  await load();
+  renderArticles();
+  renderBooks();
+  setTimeout(() => btn.classList.remove('spinning'), 600);
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
