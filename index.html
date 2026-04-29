@@ -1129,6 +1129,115 @@
   .reader-body { font-size: 17px; line-height: 1.8; color: var(--text); }
   .reader-body p { margin-bottom: 1.3em; }
 
+  /* ── Reader settings panel ───────────────────────────────────────────── */
+  .reader-controls { position: relative; }
+
+  .reader-settings {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow-md);
+    width: 210px;
+    z-index: 10;
+    display: none;
+  }
+
+  .reader-settings.open { display: block; }
+
+  .rs-label {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-light);
+    margin-bottom: 8px;
+  }
+
+  .rs-row { display: flex; gap: 6px; }
+  .rs-divider { height: 1px; background: var(--border-light); margin: 12px 0; }
+
+  .rs-size-btn {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 7px 4px;
+    font-family: Georgia, serif;
+    line-height: 1;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .rs-size-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .rs-size-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .rs-size-sm { font-size: 13px; }
+  .rs-size-lg { font-size: 20px; }
+
+  .rs-family-btn {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 7px;
+    font-size: 12px;
+    transition: all 0.15s;
+    text-align: center;
+  }
+
+  .rs-family-btn.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+  .rs-family-btn.serif  { font-family: Georgia, serif; }
+  .rs-family-btn.sans   { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+  .rs-bg-row { gap: 10px; }
+
+  .rs-bg-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .rs-bg-btn.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-light); }
+  .rs-bg-default { background: #f7f5f0; }
+  .rs-bg-sepia   { background: #f4ead8; }
+  .rs-bg-dark    { background: #1c1929; }
+
+  /* Reader background overrides (scoped to the overlay) */
+  #reader[data-bg="sepia"] {
+    --surface:      #f4ead8;
+    --surface-alt:  #ede0c8;
+    --text:         #3b2a1a;
+    --text-muted:   #6b4f3a;
+    --text-light:   #9a7a65;
+    --border:       #d0bfa0;
+    --border-light: #ddd0b8;
+    --accent-light: #f0ddc8;
+  }
+
+  #reader[data-bg="dark"] {
+    --surface:      #13111e;
+    --surface-alt:  #231f32;
+    --text:         #e6e2d8;
+    --text-muted:   #9490a0;
+    --text-light:   #5a566a;
+    --border:       #2c2938;
+    --border-light: #221f2e;
+    --accent-light: #2a1a1a;
+  }
+
   /* ── Resume indicator ────────────────────────────────────────────────── */
   .reader-resume {
     position: fixed;
@@ -1500,8 +1609,28 @@
     <nav class="reader-nav">
       <button class="reader-back" onclick="closeReader()">← Back to articles</button>
       <div class="reader-controls">
-        <button class="reader-font-btn" id="reader-font-btn" onclick="cycleReaderFont()">Aa</button>
+        <button class="reader-font-btn" id="reader-font-btn" onclick="toggleReaderSettings(event)">Aa</button>
         <button class="reader-ext" id="reader-ext">Copy link</button>
+        <div class="reader-settings" id="reader-settings">
+          <div class="rs-label">Text Size</div>
+          <div class="rs-row">
+            <button class="rs-size-btn rs-size-sm" id="rs-size-down" onclick="changeReaderFontSize(-1)">A</button>
+            <button class="rs-size-btn rs-size-lg" id="rs-size-up"   onclick="changeReaderFontSize(1)">A</button>
+          </div>
+          <div class="rs-divider"></div>
+          <div class="rs-label">Font</div>
+          <div class="rs-row">
+            <button class="rs-family-btn serif active" id="rs-serif" onclick="setReaderFamily('serif')">Serif</button>
+            <button class="rs-family-btn sans"         id="rs-sans"  onclick="setReaderFamily('sans')">Sans-Serif</button>
+          </div>
+          <div class="rs-divider"></div>
+          <div class="rs-label">Background</div>
+          <div class="rs-row rs-bg-row">
+            <button class="rs-bg-btn rs-bg-default active" id="rs-bg-default" onclick="setReaderBg('default')" title="Default"></button>
+            <button class="rs-bg-btn rs-bg-sepia"          id="rs-bg-sepia"   onclick="setReaderBg('sepia')"   title="Sepia"></button>
+            <button class="rs-bg-btn rs-bg-dark"           id="rs-bg-dark"    onclick="setReaderBg('dark')"    title="Dark"></button>
+          </div>
+        </div>
       </div>
     </nav>
     <h1 class="reader-title" id="reader-title"></h1>
@@ -2256,7 +2385,7 @@ function openReader(a) {
   const reader = document.getElementById('reader');
   reader.dataset.articleId = a.id;
   reader.classList.add('open');
-  applyReaderFont(localStorage.getItem('rn_font') || 'sm');
+  applyReaderSettings();
 
   const savedPos = parseInt(localStorage.getItem('rn_pos_' + a.id) || '0', 10);
   if (savedPos > 0) {
@@ -2412,29 +2541,78 @@ async function manualRefresh() {
   setTimeout(() => btn.classList.remove('spinning'), 600);
 }
 
-// ── Reader font size ──────────────────────────────────────────────────────────
-const FONT_SIZES = [
-  { key: 'sm', size: '17px', lh: '1.8'  },
-  { key: 'md', size: '20px', lh: '1.75' },
-  { key: 'lg', size: '23px', lh: '1.7'  },
-];
+// ── Reader settings ───────────────────────────────────────────────────────────
+const RS_SIZES = [15, 17, 19, 21, 23];
+const RS_LHS   = [1.85, 1.8, 1.75, 1.7, 1.65];
 
-function applyReaderFont(key) {
-  const f = FONT_SIZES.find(f => f.key === key) || FONT_SIZES[0];
+function getReaderSizeIdx() {
+  return parseInt(localStorage.getItem('rn_font_idx') || '1', 10);
+}
+
+function applyReaderSettings() {
+  const idx    = getReaderSizeIdx();
+  const family = localStorage.getItem('rn_font_family') || 'serif';
+  const bg     = localStorage.getItem('rn_reader_bg')   || 'default';
+
+  const fontStack = family === 'serif'
+    ? "Georgia, 'Times New Roman', serif"
+    : "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+
   const body = document.getElementById('reader-body');
-  body.style.fontSize   = f.size;
-  body.style.lineHeight = f.lh;
-  const btn = document.getElementById('reader-font-btn');
-  btn.classList.toggle('active', key !== 'sm');
+  body.style.fontSize   = RS_SIZES[idx] + 'px';
+  body.style.lineHeight = RS_LHS[idx];
+  body.style.fontFamily = fontStack;
+  document.getElementById('reader-title').style.fontFamily = fontStack;
+
+  const reader = document.getElementById('reader');
+  reader.dataset.bg = bg === 'default' ? '' : bg;
+
+  // Aa button highlights when anything is non-default
+  document.getElementById('reader-font-btn')
+    .classList.toggle('active', idx !== 1 || family !== 'serif' || bg !== 'default');
+
+  // Size buttons
+  document.getElementById('rs-size-down').disabled = idx === 0;
+  document.getElementById('rs-size-up').disabled   = idx === RS_SIZES.length - 1;
+
+  // Family buttons
+  document.getElementById('rs-serif').classList.toggle('active', family === 'serif');
+  document.getElementById('rs-sans').classList.toggle('active',  family === 'sans');
+
+  // Background buttons
+  ['default', 'sepia', 'dark'].forEach(b => {
+    document.getElementById('rs-bg-' + b).classList.toggle('active', bg === b);
+  });
 }
 
-function cycleReaderFont() {
-  const current = localStorage.getItem('rn_font') || 'sm';
-  const idx  = FONT_SIZES.findIndex(f => f.key === current);
-  const next = FONT_SIZES[(idx + 1) % FONT_SIZES.length];
-  localStorage.setItem('rn_font', next.key);
-  applyReaderFont(next.key);
+function changeReaderFontSize(dir) {
+  const idx = Math.max(0, Math.min(RS_SIZES.length - 1, getReaderSizeIdx() + dir));
+  localStorage.setItem('rn_font_idx', idx);
+  applyReaderSettings();
 }
+
+function setReaderFamily(f) {
+  localStorage.setItem('rn_font_family', f);
+  applyReaderSettings();
+}
+
+function setReaderBg(bg) {
+  localStorage.setItem('rn_reader_bg', bg);
+  applyReaderSettings();
+}
+
+function toggleReaderSettings(e) {
+  e.stopPropagation();
+  document.getElementById('reader-settings').classList.toggle('open');
+}
+
+document.addEventListener('click', e => {
+  const panel = document.getElementById('reader-settings');
+  const btn   = document.getElementById('reader-font-btn');
+  if (!panel.contains(e.target) && !btn.contains(e.target)) {
+    panel.classList.remove('open');
+  }
+});
 
 // ── Swipe to close reader ─────────────────────────────────────────────────────
 (function() {
