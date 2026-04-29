@@ -467,7 +467,7 @@
   .article-body { flex: 1; min-width: 0; }
 
   .article-title {
-    font-size: 15px;
+    font-size: 16px;
     line-height: 1.4;
     color: var(--text);
     margin-bottom: 5px;
@@ -476,7 +476,7 @@
 
   .article-meta {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-light);
     display: flex;
     gap: 10px;
@@ -488,23 +488,33 @@
   .expiry-badge { color: var(--text-light); }
   .expiry-badge.soon { color: var(--accent); }
 
-  .article-del {
+  .article-actions {
     position: absolute;
     top: 10px;
     right: 10px;
-    background: none;
-    border: none;
-    color: var(--text-light);
-    font-size: 16px;
-    line-height: 1;
-    cursor: pointer;
+    display: flex;
+    gap: 8px;
     opacity: 0;
-    transition: opacity 0.15s, color 0.15s;
-    padding: 2px;
+    transition: opacity 0.15s;
   }
 
-  .article-card:hover .article-del { opacity: 1; }
-  .article-del:hover { color: var(--accent); }
+  .article-card:hover .article-actions { opacity: 1; }
+
+  .aact {
+    background: none;
+    border: none;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 2px;
+    transition: color 0.15s;
+    line-height: 1;
+  }
+
+  .aact:hover { color: var(--accent); }
+  .aact.del { font-size: 16px; }
+  .aact.del:hover { color: #c0392b; }
 
   /* ── Drag handle ──────────────────────────────────────────────────────── */
   .drag-handle {
@@ -1050,8 +1060,11 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 11px;
     color: var(--text-light);
-    text-decoration: none;
+    background: none;
+    border: none;
     border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    padding: 0;
     transition: color 0.15s, border-color 0.15s;
     display: none;
   }
@@ -1183,6 +1196,8 @@
     .masthead-title { font-size: 22px; text-align: left; }
     .masthead-tagline { text-align: left; }
     .masthead-date, .masthead-tagline { min-width: 0; }
+    .article-card { padding: 18px 16px; }
+    .reader-title { font-size: 22px; }
   }
 </style>
 <script>
@@ -1434,7 +1449,7 @@
   <div class="reader-inner">
     <nav class="reader-nav">
       <button class="reader-back" onclick="closeReader()">← Back to articles</button>
-      <a class="reader-ext" id="reader-ext" href="#" target="_blank" rel="noopener noreferrer">Open original ↗</a>
+      <button class="reader-ext" id="reader-ext">Copy link</button>
     </nav>
     <h1 class="reader-title" id="reader-title"></h1>
     <p class="reader-meta" id="reader-meta"></p>
@@ -1585,13 +1600,16 @@ function renderArticles() {
         <div class="article-meta">
           ${a.source ? `<span class="article-source">${esc(a.source)}</span>` : ''}
           <span>Saved ${fmt(a.ts,'short')}</span>
-          <span class="expiry-badge${soon?' soon':''}">Expires in ${days}d</span>
+          ${soon ? `<span class="expiry-badge soon">Expires in ${days}d</span>` : ''}
         </div>
       </div>
-      <button class="article-del" onclick="delArt('${a.id}',event)" title="Remove">×</button>
+      <div class="article-actions">
+        <button class="aact" onclick="editArt('${a.id}',event)" title="Edit">edit</button>
+        <button class="aact del" onclick="delArt('${a.id}',event)" title="Remove">×</button>
+      </div>
     `;
     li.addEventListener('click', e => {
-      if (e.target.classList.contains('article-del') ||
+      if (e.target.closest('.article-actions') ||
           e.target.classList.contains('drag-handle')) return;
       openReader(a);
     });
@@ -1886,6 +1904,11 @@ function saveArticle() {
   persist(); renderArticles(); closeArtModal();
 }
 
+function editArt(id, e) {
+  e.stopPropagation();
+  openArtModal(id);
+}
+
 function delArt(id, e) {
   e.stopPropagation();
   articles = articles.filter(a => a.id!==id);
@@ -2139,8 +2162,18 @@ function openReader(a) {
   }
 
   const ext = document.getElementById('reader-ext');
-  if (a.url) { ext.href = a.url; ext.style.display = ''; }
-  else        { ext.style.display = 'none'; }
+  if (a.url) {
+    ext.style.display = '';
+    ext.onclick = () => {
+      navigator.clipboard.writeText(a.url).then(() => {
+        const prev = ext.textContent;
+        ext.textContent = 'Copied!';
+        setTimeout(() => { ext.textContent = prev; }, 1500);
+      }).catch(() => {});
+    };
+  } else {
+    ext.style.display = 'none';
+  }
 
   const body = document.getElementById('reader-body');
   if (a.text) {
