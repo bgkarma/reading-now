@@ -1017,15 +1017,20 @@
 
   /* ── Reader view ──────────────────────────────────────────────────────── */
   .reader-overlay {
-    display: none;
     position: fixed;
     inset: 0;
     background: var(--surface);
     z-index: 200;
     overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform 0.32s cubic-bezier(0.25, 1, 0.5, 1);
+    pointer-events: none;
   }
 
-  .reader-overlay.open { display: block; }
+  .reader-overlay.open {
+    transform: translateX(0);
+    pointer-events: auto;
+  }
 
   .reader-inner {
     max-width: 680px;
@@ -1069,7 +1074,6 @@
   .reader-ext,
   .reader-font-btn {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 11px;
     color: var(--text-light);
     background: none;
     border: none;
@@ -1079,7 +1083,13 @@
     transition: color 0.15s, border-color 0.15s;
   }
 
-  .reader-ext { display: none; }
+  .reader-ext { font-size: 11px; display: none; }
+
+  .reader-font-btn {
+    font-size: 15px;
+    letter-spacing: 0.5px;
+    line-height: 1;
+  }
 
   .reader-ext:hover,
   .reader-font-btn:hover { color: var(--accent); border-bottom-color: var(--accent); }
@@ -2263,6 +2273,7 @@ function openReader(a) {
 
 function closeReader() {
   const reader = document.getElementById('reader');
+  reader.style.transform = '';
   reader.classList.remove('open');
   reader.dataset.articleId = '';
 }
@@ -2427,18 +2438,40 @@ function cycleReaderFont() {
 
 // ── Swipe to close reader ─────────────────────────────────────────────────────
 (function() {
-  let x0 = 0, y0 = 0;
+  let x0 = 0, y0 = 0, tracking = false;
   const reader = document.getElementById('reader');
 
   reader.addEventListener('touchstart', e => {
     x0 = e.touches[0].clientX;
     y0 = e.touches[0].clientY;
+    tracking = false;
   }, { passive: true });
+
+  reader.addEventListener('touchmove', e => {
+    const dx = e.touches[0].clientX - x0;
+    const dy = Math.abs(e.touches[0].clientY - y0);
+
+    if (!tracking && Math.abs(dx) > 8) {
+      tracking = dx > 0 && dy < Math.abs(dx);
+    }
+
+    if (tracking && dx > 0) {
+      e.preventDefault();
+      reader.style.transition = 'none';
+      reader.style.transform  = `translateX(${dx}px)`;
+    }
+  }, { passive: false });
 
   reader.addEventListener('touchend', e => {
     const dx = e.changedTouches[0].clientX - x0;
-    const dy = Math.abs(e.changedTouches[0].clientY - y0);
-    if (dx > 60 && dy < 80) closeReader();
+    reader.style.transition = '';
+
+    if (tracking && dx > 80) {
+      closeReader();
+    } else {
+      reader.style.transform = '';
+    }
+    tracking = false;
   }, { passive: true });
 })();
 
