@@ -2607,10 +2607,8 @@ function setReaderFamily(f) {
 
 function setReaderBg(bg) {
   localStorage.setItem('rn_reader_bg', bg);
-  if (bg === 'dark') {
-    applyTheme(true);
-    return;
-  }
+  if (bg === 'dark')  { applyTheme(true);  return; }
+  if (bg === 'sepia') { applyTheme(false); return; }
   applyReaderSettings();
 }
 
