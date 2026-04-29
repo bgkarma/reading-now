@@ -642,6 +642,36 @@
   .star { font-size: 12px; color: #d8d0c4; line-height: 1; }
   .star.on { color: var(--gold); }
 
+  .book-drag-handle {
+    font-size: 13px;
+    color: var(--border);
+    cursor: grab;
+    flex-shrink: 0;
+    padding: 2px 0 0 0;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+    user-select: none;
+    align-self: center;
+  }
+
+  .book-card:hover .book-drag-handle { opacity: 1; }
+  .book-drag-handle:hover { color: var(--text-muted); }
+
+  .book-card.sortable-ghost {
+    opacity: 0.35;
+    background: var(--accent-light);
+    border-color: var(--accent);
+  }
+
+  .book-card.sortable-chosen { cursor: grabbing; }
+
+  .book-card.sortable-drag {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    border-color: var(--accent);
+    cursor: grabbing;
+  }
+
   .book-actions {
     position: absolute;
     top: 10px;
@@ -1412,6 +1442,7 @@ let articles = [], books = [], bookFilter = 'all', rating = 0;
 let selectedBook = null;
 let searchDebounce = null;
 let _artSortable = null;
+let _bookSortable = null;
 
 // ── Sync key ──────────────────────────────────────────────────────────────────
 function getKey() { return localStorage.getItem(KEY_STORE) || ''; }
@@ -1592,11 +1623,7 @@ function renderBooks() {
   if (!filtered.length) { empty.style.display = ''; return; }
   empty.style.display = 'none';
 
-  [...filtered].sort((a,b) => {
-    if (a.status==='reading' && b.status!=='reading') return -1;
-    if (a.status!=='reading' && b.status==='reading') return 1;
-    return b.ts - a.ts;
-  }).forEach(b => {
+  filtered.forEach(b => {
     const starsHtml = Array.from({length:5}, (_,i) =>
       `<span class="star${i < b.rating ? ' on':''}">★</span>`
     ).join('');
@@ -1612,6 +1639,7 @@ function renderBooks() {
     li.dataset.id = b.id;
     li.title      = 'View on Goodreads';
     li.innerHTML  = `
+      <span class="book-drag-handle" title="Drag to reorder">⠿</span>
       <div class="book-cover">
         ${coverSrc
           ? `<img src="${coverSrc}" onerror="this.style.display='none';this.nextElementSibling.style.display=''" alt="">
@@ -1634,9 +1662,45 @@ function renderBooks() {
     `;
     li.addEventListener('click', e => {
       if (e.target.closest('.book-actions')) return;
+      if (e.target.classList.contains('book-drag-handle')) return;
       window.open(goodreadsUrl, '_blank', 'noopener,noreferrer');
     });
     list.appendChild(li);
+  });
+
+  initBookSortable();
+}
+
+function initBookSortable() {
+  if (_bookSortable) { _bookSortable.destroy(); _bookSortable = null; }
+  const list = document.getElementById('book-list');
+  if (!list.querySelector('.book-card')) return;
+
+  _bookSortable = Sortable.create(list, {
+    handle:      '.book-drag-handle',
+    animation:   180,
+    easing:      'cubic-bezier(0.25, 1, 0.5, 1)',
+    ghostClass:  'sortable-ghost',
+    chosenClass: 'sortable-chosen',
+    dragClass:   'sortable-drag',
+    onEnd() {
+      const visibleIds = Array.from(list.querySelectorAll('.book-card'))
+                               .map(el => el.dataset.id);
+      const reorderedVisible = visibleIds.map(id => books.find(b => b.id === id)).filter(Boolean);
+      // Interleave: slot reordered visible books back into the master array,
+      // leaving hidden (filtered-out) books in their original positions.
+      const newBooks = [];
+      let vi = 0;
+      books.forEach(b => {
+        if (visibleIds.includes(b.id)) {
+          newBooks.push(reorderedVisible[vi++]);
+        } else {
+          newBooks.push(b);
+        }
+      });
+      books = newBooks;
+      persist();
+    }
   });
 }
 
@@ -2026,7 +2090,7 @@ function saveBook() {
     const i = books.findIndex(b => b.id===eid);
     if (i>-1) books[i] = { ...books[i], ...data };
   } else {
-    books.push({ id: uid(), ts: Date.now(), ...data });
+    books.unshift({ id: uid(), ts: Date.now(), ...data });
   }
 
   persist(); renderBooks(); closeBookModal();
