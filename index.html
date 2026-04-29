@@ -1962,6 +1962,9 @@ async function fetchArticle() {
   btn.disabled = true; btn.textContent = '…';
   status.textContent = 'Fetching article…'; status.className = 'fetch-status';
 
+  let autoSource = '';
+  try { autoSource = new URL(url).hostname.replace(/^www\./, ''); } catch {}
+
   try {
     const res = await fetch(`https://r.jina.ai/${url}`, {
       headers: {
@@ -1979,9 +1982,6 @@ async function fetchArticle() {
     const parsedTitle  = titleMatch ? titleMatch[1].trim() : '';
     const parsedText   = cleanArticleText(contentMatch ? contentMatch[1] : raw);
 
-    let autoSource = '';
-    try { autoSource = new URL(url).hostname.replace(/^www\./, ''); } catch {}
-
     if (parsedTitle && !document.getElementById('art-title').value.trim())
       document.getElementById('art-title').value = parsedTitle;
     if (parsedText)
@@ -1989,11 +1989,49 @@ async function fetchArticle() {
     if (autoSource && !document.getElementById('art-source').value.trim())
       document.getElementById('art-source').value = autoSource;
 
-    status.textContent = parsedText
-      ? 'Article fetched. Review the text below before saving.'
-      : 'Fetched, but no text found — try pasting manually.';
+    if (parsedText) {
+      status.textContent = 'Article fetched. Review the text below before saving.';
+      btn.textContent = 'Fetch'; btn.disabled = false;
+    } else if (parsedTitle) {
+      status.textContent = 'Article text blocked — title saved. You can save with just the link.';
+      btn.textContent = 'Fetch'; btn.disabled = false;
+    } else {
+      // Jina returned nothing useful — try metadata fallback for title
+      await fetchTitleFallback(url, autoSource, status, btn);
+    }
+    return;
   } catch {
-    status.textContent = 'Could not fetch article. Paste the text manually.';
+    // Jina failed entirely — try metadata fallback
+    if (autoSource && !document.getElementById('art-source').value.trim())
+      document.getElementById('art-source').value = autoSource;
+    await fetchTitleFallback(url, autoSource, status, btn);
+  }
+}
+
+async function fetchTitleFallback(url, autoSource, status, btn) {
+  status.textContent = 'Full article blocked — trying to get title…'; status.className = 'fetch-status';
+
+  let fallbackTitle = '';
+  try {
+    const mlRes = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`);
+    if (mlRes.ok) {
+      const mlData = await mlRes.json();
+      if (mlData.status === 'success' && mlData.data?.title) {
+        fallbackTitle = mlData.data.title;
+      }
+    }
+  } catch {}
+
+  if (fallbackTitle && !document.getElementById('art-title').value.trim())
+    document.getElementById('art-title').value = fallbackTitle;
+  if (autoSource && !document.getElementById('art-source').value.trim())
+    document.getElementById('art-source').value = autoSource;
+
+  if (fallbackTitle) {
+    status.textContent = 'Article blocked — title retrieved. Save with just the link, or paste text manually.';
+    status.className = 'fetch-status';
+  } else {
+    status.textContent = 'Article blocked. Enter the title manually, then save.';
     status.className = 'fetch-status err';
   }
 
