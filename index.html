@@ -2524,6 +2524,15 @@ function closeAbout() {
 function applyTheme(dark) {
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
   localStorage.setItem('rn_theme', dark ? 'dark' : 'light');
+  // Sync reader background
+  if (dark) {
+    localStorage.setItem('rn_reader_bg', 'dark');
+  } else if (localStorage.getItem('rn_reader_bg') === 'dark') {
+    localStorage.setItem('rn_reader_bg', 'default');
+  }
+  if (document.getElementById('reader').classList.contains('open')) {
+    applyReaderSettings();
+  }
 }
 
 function toggleTheme() {
@@ -2598,6 +2607,10 @@ function setReaderFamily(f) {
 
 function setReaderBg(bg) {
   localStorage.setItem('rn_reader_bg', bg);
+  if (bg === 'dark') {
+    applyTheme(true);
+    return;
+  }
   applyReaderSettings();
 }
 
