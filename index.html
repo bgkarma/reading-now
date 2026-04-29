@@ -1030,7 +1030,7 @@
   .reader-inner {
     max-width: 680px;
     margin: 0 auto;
-    padding: 44px 24px 80px;
+    padding: 0 24px 80px;
   }
 
   .reader-nav {
@@ -1038,8 +1038,12 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: 36px;
-    padding-bottom: 14px;
+    padding: 20px 0 14px;
     border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 1;
   }
 
   .reader-back {
@@ -1103,6 +1107,30 @@
 
   .reader-body { font-size: 17px; line-height: 1.8; color: var(--text); }
   .reader-body p { margin-bottom: 1.3em; }
+
+  /* ── Resume indicator ────────────────────────────────────────────────── */
+  .reader-resume {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    box-shadow: var(--shadow-sm);
+    opacity: 0;
+    transition: opacity 0.4s;
+    pointer-events: none;
+    z-index: 201;
+    white-space: nowrap;
+  }
+
+  .reader-resume.show { opacity: 1; }
 
   /* ── Dark mode ───────────────────────────────────────────────────────── */
   [data-theme="dark"] {
@@ -1446,6 +1474,7 @@
 
 <!-- Reader -->
 <div class="reader-overlay" id="reader">
+  <div class="reader-resume" id="reader-resume">Resumed from where you left off</div>
   <div class="reader-inner">
     <nav class="reader-nav">
       <button class="reader-back" onclick="closeReader()">← Back to articles</button>
@@ -1911,6 +1940,7 @@ function editArt(id, e) {
 
 function delArt(id, e) {
   e.stopPropagation();
+  localStorage.removeItem('rn_pos_' + id);
   articles = articles.filter(a => a.id!==id);
   persist(); renderArticles();
 }
@@ -2199,11 +2229,27 @@ function openReader(a) {
     body.innerHTML = `<p style="color:var(--text-light);font-style:italic">No content saved for this article.</p>`;
   }
 
-  document.getElementById('reader').classList.add('open');
+  const reader = document.getElementById('reader');
+  reader.dataset.articleId = a.id;
+  reader.classList.add('open');
+
+  const savedPos = parseInt(localStorage.getItem('rn_pos_' + a.id) || '0', 10);
+  if (savedPos > 0) {
+    setTimeout(() => {
+      reader.scrollTop = savedPos;
+      const pill = document.getElementById('reader-resume');
+      pill.classList.add('show');
+      setTimeout(() => pill.classList.remove('show'), 2200);
+    }, 60);
+  } else {
+    reader.scrollTop = 0;
+  }
 }
 
 function closeReader() {
-  document.getElementById('reader').classList.remove('open');
+  const reader = document.getElementById('reader');
+  reader.classList.remove('open');
+  reader.dataset.articleId = '';
 }
 
 // ── Setup overlay ─────────────────────────────────────────────────────────────
@@ -2339,6 +2385,40 @@ async function manualRefresh() {
   renderBooks();
   setTimeout(() => btn.classList.remove('spinning'), 600);
 }
+
+// ── Swipe to close reader ─────────────────────────────────────────────────────
+(function() {
+  let x0 = 0, y0 = 0;
+  const reader = document.getElementById('reader');
+
+  reader.addEventListener('touchstart', e => {
+    x0 = e.touches[0].clientX;
+    y0 = e.touches[0].clientY;
+  }, { passive: true });
+
+  reader.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - x0;
+    const dy = Math.abs(e.changedTouches[0].clientY - y0);
+    if (dx > 60 && dy < 80) closeReader();
+  }, { passive: true });
+})();
+
+// ── Reading position ──────────────────────────────────────────────────────────
+let _posSaveTimer = null;
+
+document.getElementById('reader').addEventListener('scroll', function() {
+  clearTimeout(_posSaveTimer);
+  _posSaveTimer = setTimeout(() => {
+    const id = this.dataset.articleId;
+    if (!id) return;
+    const nearBottom = this.scrollTop + this.clientHeight >= this.scrollHeight - 200;
+    if (nearBottom) {
+      localStorage.removeItem('rn_pos_' + id);
+    } else {
+      localStorage.setItem('rn_pos_' + id, this.scrollTop);
+    }
+  }, 400);
+});
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 setMastDate();
