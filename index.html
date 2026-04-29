@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" id="meta-theme-color" content="#eceae3">
 <title>Reading Now</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1361,8 +1362,9 @@
 <script>
   // Apply saved theme before first paint to avoid flash
   (function() {
-    if (localStorage.getItem('rn_theme') === 'dark')
-      document.documentElement.setAttribute('data-theme', 'dark');
+    const dark = localStorage.getItem('rn_theme') === 'dark';
+    if (dark) document.documentElement.setAttribute('data-theme', 'dark');
+    document.getElementById('meta-theme-color').content = dark ? '#13111e' : '#eceae3';
   })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
@@ -2524,6 +2526,7 @@ function closeAbout() {
 function applyTheme(dark) {
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
   localStorage.setItem('rn_theme', dark ? 'dark' : 'light');
+  document.getElementById('meta-theme-color').content = dark ? '#13111e' : '#eceae3';
   // Sync reader background
   if (dark) {
     localStorage.setItem('rn_reader_bg', 'dark');
