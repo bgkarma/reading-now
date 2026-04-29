@@ -1060,7 +1060,14 @@
 
   .reader-back:hover { color: var(--text); }
 
-  .reader-ext {
+  .reader-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .reader-ext,
+  .reader-font-btn {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 11px;
     color: var(--text-light);
@@ -1070,10 +1077,14 @@
     cursor: pointer;
     padding: 0;
     transition: color 0.15s, border-color 0.15s;
-    display: none;
   }
 
-  .reader-ext:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  .reader-ext { display: none; }
+
+  .reader-ext:hover,
+  .reader-font-btn:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .reader-font-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 
   .reader-source-link {
     color: inherit;
@@ -1478,7 +1489,10 @@
   <div class="reader-inner">
     <nav class="reader-nav">
       <button class="reader-back" onclick="closeReader()">← Back to articles</button>
-      <button class="reader-ext" id="reader-ext">Copy link</button>
+      <div class="reader-controls">
+        <button class="reader-font-btn" id="reader-font-btn" onclick="cycleReaderFont()">Aa</button>
+        <button class="reader-ext" id="reader-ext">Copy link</button>
+      </div>
     </nav>
     <h1 class="reader-title" id="reader-title"></h1>
     <p class="reader-meta" id="reader-meta"></p>
@@ -2232,6 +2246,7 @@ function openReader(a) {
   const reader = document.getElementById('reader');
   reader.dataset.articleId = a.id;
   reader.classList.add('open');
+  applyReaderFont(localStorage.getItem('rn_font') || 'sm');
 
   const savedPos = parseInt(localStorage.getItem('rn_pos_' + a.id) || '0', 10);
   if (savedPos > 0) {
@@ -2384,6 +2399,30 @@ async function manualRefresh() {
   renderArticles();
   renderBooks();
   setTimeout(() => btn.classList.remove('spinning'), 600);
+}
+
+// ── Reader font size ──────────────────────────────────────────────────────────
+const FONT_SIZES = [
+  { key: 'sm', size: '17px', lh: '1.8'  },
+  { key: 'md', size: '20px', lh: '1.75' },
+  { key: 'lg', size: '23px', lh: '1.7'  },
+];
+
+function applyReaderFont(key) {
+  const f = FONT_SIZES.find(f => f.key === key) || FONT_SIZES[0];
+  const body = document.getElementById('reader-body');
+  body.style.fontSize   = f.size;
+  body.style.lineHeight = f.lh;
+  const btn = document.getElementById('reader-font-btn');
+  btn.classList.toggle('active', key !== 'sm');
+}
+
+function cycleReaderFont() {
+  const current = localStorage.getItem('rn_font') || 'sm';
+  const idx  = FONT_SIZES.findIndex(f => f.key === current);
+  const next = FONT_SIZES[(idx + 1) % FONT_SIZES.length];
+  localStorage.setItem('rn_font', next.key);
+  applyReaderFont(next.key);
 }
 
 // ── Swipe to close reader ─────────────────────────────────────────────────────
