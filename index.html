@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" id="meta-theme-color" content="#eceae3">
 <title>Reading Now</title>
 <style>
@@ -1439,7 +1439,7 @@
     box-shadow: 0 -4px 20px rgba(0,0,0,0.10);
     transform: translateY(100%);
     transition: transform 0.30s cubic-bezier(0.25, 1, 0.5, 1);
-    max-height: 52vh;
+    max-height: 78vh;
     display: none;
     flex-direction: column;
   }
@@ -1467,7 +1467,7 @@
   .notes-actions {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 20px;
   }
 
   .notes-copy-btn {
@@ -1477,7 +1477,7 @@
     background: none;
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 4px 10px;
+    padding: 6px 12px;
     cursor: pointer;
     transition: all 0.15s;
   }
@@ -1487,10 +1487,12 @@
   .notes-close-btn {
     background: none;
     border: none;
-    font-size: 20px;
+    font-size: 24px;
     color: var(--text-light);
     cursor: pointer;
-    padding: 0 2px;
+    /* Large tap target for thumbs */
+    padding: 8px 8px 8px 4px;
+    margin: -8px -8px -8px -4px;
     line-height: 1;
     transition: color 0.15s;
   }
@@ -1509,7 +1511,7 @@
   .notes-textarea {
     width: 100%;
     flex: 1;
-    min-height: 90px;
+    min-height: 200px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
