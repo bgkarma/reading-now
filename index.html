@@ -1263,6 +1263,31 @@
 
   .reader-resume.show { opacity: 1; }
 
+  /* ── Reading progress bar ────────────────────────────────────────────── */
+  .reader-progress {
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.9s ease;
+    pointer-events: none;
+  }
+
+  .reader-progress.visible {
+    opacity: 1;
+    transition: opacity 0.15s ease;
+  }
+
+  .reader-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.12s ease-out;
+  }
+
   /* ── Dark mode ───────────────────────────────────────────────────────── */
   [data-theme="dark"] {
     --bg:           #13111e;
@@ -1607,6 +1632,9 @@
 
 <!-- Reader -->
 <div class="reader-overlay" id="reader">
+  <div class="reader-progress" id="reader-progress">
+    <div class="reader-progress-fill" id="reader-progress-fill"></div>
+  </div>
   <div class="reader-resume" id="reader-resume">Resumed from where you left off</div>
   <div class="reader-inner">
     <nav class="reader-nav">
@@ -2426,6 +2454,7 @@ function openReader(a) {
   const reader = document.getElementById('reader');
   reader.dataset.articleId = a.id;
   reader.classList.add('open');
+  _resetProgressBar();
   applyReaderSettings();
 
   const savedPos = parseInt(localStorage.getItem('rn_pos_' + a.id) || '0', 10);
@@ -2446,6 +2475,7 @@ function closeReader() {
   reader.style.transform = '';
   reader.classList.remove('open');
   reader.dataset.articleId = '';
+  _resetProgressBar();
 }
 
 // ── Setup overlay ─────────────────────────────────────────────────────────────
@@ -2708,8 +2738,35 @@ document.addEventListener('click', e => {
 
 // ── Reading position ──────────────────────────────────────────────────────────
 let _posSaveTimer = null;
+let _progressHideTimer = null;
+
+const _progressBar  = document.getElementById('reader-progress');
+const _progressFill = document.getElementById('reader-progress-fill');
+
+function _updateProgressBar(el) {
+  const scrollable = el.scrollHeight - el.clientHeight;
+  if (scrollable <= 0) return;
+  const pct = el.scrollTop / scrollable;
+  if (pct < 0.10) return; // don't appear before 10% in
+
+  _progressFill.style.width = (pct * 100).toFixed(1) + '%';
+  _progressBar.classList.add('visible');
+
+  clearTimeout(_progressHideTimer);
+  _progressHideTimer = setTimeout(() => {
+    _progressBar.classList.remove('visible');
+  }, 2200);
+}
+
+function _resetProgressBar() {
+  clearTimeout(_progressHideTimer);
+  _progressBar.classList.remove('visible');
+  _progressFill.style.width = '0%';
+}
 
 document.getElementById('reader').addEventListener('scroll', function() {
+  _updateProgressBar(this);
+
   clearTimeout(_posSaveTimer);
   _posSaveTimer = setTimeout(() => {
     const id = this.dataset.articleId;
