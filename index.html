@@ -2149,7 +2149,7 @@ function saveArticle() {
       alert('15-article limit reached. Remove one before adding more.');
       return;
     }
-    articles.unshift({ id: uid(), ts: Date.now(), ...patch });
+    articles.unshift({ id: uid(), ts: Date.now(), opens: 0, ...patch });
   }
 
   persist(); renderArticles(); closeArtModal();
@@ -2405,6 +2405,15 @@ function setFilter(f, btn) {
 
 // ── Reader ────────────────────────────────────────────────────────────────────
 function openReader(a) {
+  // ── Track opens & auto-sort ───────────────────────────────────────────────
+  const artIdx = articles.findIndex(x => x.id === a.id);
+  if (artIdx > -1) {
+    articles[artIdx].opens = (articles[artIdx].opens || 0) + 1;
+    articles.sort((x, y) => (y.opens || 0) - (x.opens || 0));
+    persist();
+    renderArticles();
+  }
+
   document.getElementById('reader-title').textContent = a.title;
   const metaEl = document.getElementById('reader-meta');
   if (a.source && a.url) {
