@@ -3164,6 +3164,11 @@ function _hideHlTooltip() {
 }
 
 const _hlTip = document.getElementById('hl-tooltip');
+
+// Prevent mousedown from collapsing the text selection before click fires.
+// This is the standard technique used by annotation toolbars — preventDefault
+// on mousedown stops the browser from deselecting text, while click still fires.
+_hlTip.addEventListener('mousedown', e => { e.preventDefault(); });
 _hlTip.addEventListener('mouseenter', () => { _hlHovered = true;  });
 _hlTip.addEventListener('mouseleave', () => { _hlHovered = false; });
 
