@@ -3190,29 +3190,43 @@ document.getElementById('reader-body').addEventListener('click', e => {
   _showHlTooltip(text, mark.getBoundingClientRect(), 'remove');
 });
 
-// Selection change — show "Highlight" tooltip when text is selected in reader
+// ── Show highlight tooltip ────────────────────────────────────────────────────
+// pointerup fires exactly once when the user finishes a selection (mouse or touch).
+// Far more reliable than selectionchange on desktop.
+document.getElementById('reader').addEventListener('pointerup', e => {
+  if (e.target.closest('#hl-tooltip')) return;
+  requestAnimationFrame(() => {
+    const sel  = window.getSelection();
+    if (!sel || sel.isCollapsed) return;
+    const text = sel.toString().trim();
+    if (text.length < 3) return;
+    if (!document.getElementById('reader').classList.contains('open')) return;
+    const range = sel.getRangeAt(0);
+    if (!document.getElementById('reader-body').contains(range.commonAncestorContainer)) return;
+    _showHlTooltip(text, range.getBoundingClientRect(), 'add');
+  });
+});
+
+// selectionchange: re-show on mobile when user drags selection handles after
+// the initial tap, and hide on all devices when selection collapses.
 let _selTimer = null;
 document.addEventListener('selectionchange', () => {
   clearTimeout(_selTimer);
   _selTimer = setTimeout(() => {
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed) {
-      // Don't hide if the mouse is over the tooltip (desktop: user is about to click it)
       if (!_hlHovered) _hideHlTooltip();
       return;
     }
 
+    // On desktop (fine pointer) pointerup already handles showing — skip.
+    if (!window.matchMedia('(pointer: coarse)').matches) return;
+
     const text = sel.toString().trim();
-    if (!text || text.length < 3) { _hideHlTooltip(); return; }
-
-    if (!document.getElementById('reader').classList.contains('open')) {
-      _hideHlTooltip(); return;
-    }
-
+    if (text.length < 3) return;
+    if (!document.getElementById('reader').classList.contains('open')) return;
     const range = sel.getRangeAt(0);
-    const body  = document.getElementById('reader-body');
-    if (!body.contains(range.commonAncestorContainer)) { _hideHlTooltip(); return; }
-
+    if (!document.getElementById('reader-body').contains(range.commonAncestorContainer)) return;
     _showHlTooltip(text, range.getBoundingClientRect(), 'add');
   }, 120);
 });
