@@ -1216,6 +1216,19 @@
   .rs-bg-sepia   { background: #f4ead8; }
   .rs-bg-dark    { background: #1c1929; }
 
+  .rs-voice-select {
+    width: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 6px;
+    cursor: pointer;
+    appearance: auto;
+  }
+
   /* Reader background overrides (scoped to the overlay) */
   #reader[data-bg="sepia"] {
     --surface:      #f4ead8;
@@ -1870,6 +1883,13 @@
             <button class="rs-bg-btn rs-bg-default active" id="rs-bg-default" onclick="setReaderBg('default')" title="Default"></button>
             <button class="rs-bg-btn rs-bg-sepia"          id="rs-bg-sepia"   onclick="setReaderBg('sepia')"   title="Sepia"></button>
             <button class="rs-bg-btn rs-bg-dark"           id="rs-bg-dark"    onclick="setReaderBg('dark')"    title="Dark"></button>
+          </div>
+          <div class="rs-divider"></div>
+          <div class="rs-label">Voice</div>
+          <div class="rs-row">
+            <select class="rs-voice-select" id="rs-voice-select" onchange="setReaderVoice(this.value)">
+              <option value="">Default</option>
+            </select>
           </div>
         </div>
       </div>
@@ -3104,9 +3124,10 @@ function saveNotesNow() {
 
 // ── Listen / TTS ──────────────────────────────────────────────────────────────
 (function () {
-  const synth = window.speechSynthesis;
+  const synth    = window.speechSynthesis;
+  const VOICE_KEY = 'rn_tts_voice';
 
-  // Grey out button immediately if TTS unavailable
+  // Grey out button if TTS unavailable
   if (!synth) {
     document.addEventListener('DOMContentLoaded', () => {
       const btn = document.getElementById('reader-listen-btn');
@@ -3115,14 +3136,69 @@ function saveNotesNow() {
     return;
   }
 
-  let _utterance = null;
+  let _utterance  = null;
+  let _silentCtx  = null;
+  let _silentOsc  = null;
 
+  // ── Silent audio loop ────────────────────────────────────────────────────
+  // Keeps the iOS audio session alive so speech continues when the screen
+  // locks. A near-silent (0.001 gain) oscillator tricks iOS into thinking
+  // audio is still playing, preventing the session from being suspended.
+  function _startSilentAudio() {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      _silentCtx = new Ctx();
+      const gain = _silentCtx.createGain();
+      gain.gain.value = 0.001;
+      _silentOsc = _silentCtx.createOscillator();
+      _silentOsc.connect(gain);
+      gain.connect(_silentCtx.destination);
+      _silentOsc.start();
+    } catch (e) { /* not supported — graceful fallback */ }
+  }
+
+  function _stopSilentAudio() {
+    try { if (_silentOsc) { _silentOsc.stop(); _silentOsc = null; } } catch (e) {}
+    try { if (_silentCtx) { _silentCtx.close(); _silentCtx = null; } } catch (e) {}
+  }
+
+  // ── Voice list ───────────────────────────────────────────────────────────
+  function _populateVoices() {
+    const sel = document.getElementById('rs-voice-select');
+    if (!sel) return;
+    const voices = synth.getVoices().filter(v => v.lang.startsWith('en'));
+    if (!voices.length) return;
+    const saved = localStorage.getItem(VOICE_KEY) || '';
+    sel.innerHTML = '<option value="">Default</option>' +
+      voices.map(v =>
+        `<option value="${v.name}"${v.name === saved ? ' selected' : ''}>${v.name}</option>`
+      ).join('');
+  }
+
+  // Voices load async; listen for the event and also try on DOMContentLoaded
+  synth.addEventListener('voiceschanged', _populateVoices);
+  document.addEventListener('DOMContentLoaded', _populateVoices);
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
   function _setBtn(label, active) {
     const btn = document.getElementById('reader-listen-btn');
     if (!btn) return;
     btn.textContent = label;
     btn.classList.toggle('active', !!active);
   }
+
+  function _getSelectedVoice() {
+    const name = localStorage.getItem(VOICE_KEY) || '';
+    if (!name) return null;
+    return synth.getVoices().find(v => v.name === name) || null;
+  }
+
+  // ── Public API ───────────────────────────────────────────────────────────
+  window.setReaderVoice = function (name) {
+    if (name) { localStorage.setItem(VOICE_KEY, name); }
+    else       { localStorage.removeItem(VOICE_KEY); }
+  };
 
   window.toggleListen = function () {
     if (synth.speaking && !synth.paused) {
@@ -3136,8 +3212,9 @@ function saveNotesNow() {
       return;
     }
 
-    // Start fresh read
+    // Start fresh
     synth.cancel();
+    _stopSilentAudio();
     _utterance = null;
 
     const title = (document.getElementById('reader-title') || {}).textContent || '';
@@ -3145,15 +3222,17 @@ function saveNotesNow() {
     const text  = (title.trim() ? title.trim() + '.\n\n' : '') + body.trim();
     if (!text) return;
 
-    const u = new SpeechSynthesisUtterance(text);
-    u.rate  = 0.92;  // slightly slower than default — easier to follow on a walk
-    u.pitch = 1;
+    const u   = new SpeechSynthesisUtterance(text);
+    u.rate    = 0.92;
+    u.pitch   = 1;
+    const voice = _getSelectedVoice();
+    if (voice) u.voice = voice;
 
-    u.onstart  = () => _setBtn('Pause',  true);
-    u.onpause  = () => _setBtn('Resume', true);
-    u.onresume = () => _setBtn('Pause',  true);
-    u.onend    = () => { _setBtn('Listen', false); _utterance = null; };
-    u.onerror  = () => { _setBtn('Listen', false); _utterance = null; };
+    u.onstart  = () => { _setBtn('Pause',  true); _startSilentAudio(); };
+    u.onpause  = () =>   _setBtn('Resume', true);
+    u.onresume = () => { _setBtn('Pause',  true); };
+    u.onend    = () => { _setBtn('Listen', false); _stopSilentAudio(); _utterance = null; };
+    u.onerror  = () => { _setBtn('Listen', false); _stopSilentAudio(); _utterance = null; };
 
     _utterance = u;
     synth.speak(u);
@@ -3161,6 +3240,7 @@ function saveNotesNow() {
 
   window.stopListen = function () {
     synth.cancel();
+    _stopSilentAudio();
     _utterance = null;
     _setBtn('Listen', false);
   };
