@@ -1369,6 +1369,194 @@
     to   { transform: rotate(360deg); }
   }
 
+  /* ── Text highlights ──────────────────────────────────────────────────── */
+  .reader-body mark.rn-hl {
+    background: rgba(200, 168, 60, 0.28);
+    border-radius: 2px;
+    cursor: pointer;
+    font-style: inherit;
+    color: inherit;
+    padding: 0 1px;
+  }
+
+  #reader[data-bg="dark"] .reader-body mark.rn-hl {
+    background: rgba(200, 168, 60, 0.16);
+  }
+
+  .hl-tooltip {
+    position: fixed;
+    background: var(--text);
+    color: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 9px 18px;
+    border-radius: 20px;
+    cursor: pointer;
+    z-index: 250;
+    opacity: 0;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+    transition: opacity 0.15s;
+    user-select: none;
+    -webkit-user-select: none;
+    transform: translateX(-50%);
+  }
+
+  .hl-tooltip.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* ── Notes button in reader nav ────────────────────────────────────────── */
+  .reader-notes-btn {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    color: var(--text-light);
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    padding: 0;
+    line-height: 1.2;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .reader-notes-btn:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  .reader-notes-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── Notes drawer ──────────────────────────────────────────────────────── */
+  .reader-notes {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 215;
+    background: var(--surface-alt);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.10);
+    transform: translateY(100%);
+    transition: transform 0.30s cubic-bezier(0.25, 1, 0.5, 1);
+    max-height: 52vh;
+    display: none;
+    flex-direction: column;
+  }
+
+  .reader-notes.ready { display: flex; }
+  .reader-notes.open  { transform: translateY(0); }
+
+  .notes-handle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px 10px;
+    border-bottom: 1px solid var(--border-light);
+    flex-shrink: 0;
+  }
+
+  .notes-label {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .notes-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .notes-copy-btn {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    color: var(--text-light);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .notes-copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  .notes-close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 0 2px;
+    line-height: 1;
+    transition: color 0.15s;
+  }
+
+  .notes-close-btn:hover { color: var(--text); }
+
+  .notes-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 18px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .notes-textarea {
+    width: 100%;
+    flex: 1;
+    min-height: 90px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    font-family: Georgia, serif;
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--text);
+    resize: none;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .notes-textarea:focus { border-color: var(--accent); }
+  .notes-textarea::placeholder { color: var(--text-light); }
+
+  .notes-reminder {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    color: var(--text-light);
+    font-style: italic;
+    line-height: 1.55;
+  }
+
+  /* ── Finished pill ─────────────────────────────────────────────────────── */
+  .reader-finished-pill {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--green);
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 16px 5px;
+    border-radius: 0 0 8px 8px;
+    z-index: 220;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+    white-space: nowrap;
+  }
+
+  .reader-finished-pill.show { opacity: 1; }
+
   /* ── Responsive ───────────────────────────────────────────────────────── */
   @media (max-width: 860px) {
     .container { padding: 0 24px 60px; }
@@ -1640,6 +1828,7 @@
     <nav class="reader-nav">
       <button class="reader-back" onclick="closeReader()">← Back to articles</button>
       <div class="reader-controls">
+        <button class="reader-notes-btn" id="reader-notes-btn" onclick="toggleNotes()">Notes</button>
         <button class="reader-font-btn" id="reader-font-btn" onclick="toggleReaderSettings(event)">Aa</button>
         <button class="reader-ext" id="reader-ext">Copy link</button>
         <div class="reader-settings" id="reader-settings">
@@ -1670,6 +1859,29 @@
   </div>
 </div>
 
+<!-- Notes drawer -->
+<div class="reader-notes" id="reader-notes">
+  <div class="notes-handle">
+    <span class="notes-label">Notes</span>
+    <div class="notes-actions">
+      <button class="notes-copy-btn" id="notes-copy-btn" onclick="copyNotes()">Copy all</button>
+      <button class="notes-close-btn" onclick="closeNotes()">×</button>
+    </div>
+  </div>
+  <div class="notes-body">
+    <textarea class="notes-textarea" id="notes-textarea"
+              placeholder="Your thoughts on this article…"
+              oninput="onNotesInput()"></textarea>
+    <p class="notes-reminder">Articles are temporary, and so are these notes. If anything here matters to you, move it to another app before this article expires.</p>
+  </div>
+</div>
+
+<!-- Highlight tooltip -->
+<div class="hl-tooltip" id="hl-tooltip"></div>
+
+<!-- Finished pill -->
+<div class="reader-finished-pill" id="reader-finished-pill">Finished!</div>
+
 <script>
 // ── Constants ─────────────────────────────────────────────────────────────────
 const ART_MAX    = 15;
@@ -1684,6 +1896,8 @@ let selectedBook = null;
 let searchDebounce = null;
 let _artSortable = null;
 let _bookSortable = null;
+let _notesSaveTimer = null;
+let _isFinished = false;
 
 // ── Sync key ──────────────────────────────────────────────────────────────────
 function getKey() { return localStorage.getItem(KEY_STORE) || ''; }
@@ -2460,9 +2674,17 @@ function openReader(a) {
     body.innerHTML = `<p style="color:var(--text-light);font-style:italic">No content saved for this article.</p>`;
   }
 
+  // Store clean HTML snapshot for highlight re-application
+  body.dataset.cleanHtml = body.innerHTML;
+  applyHighlights(a);
+
   const reader = document.getElementById('reader');
   reader.dataset.articleId = a.id;
   reader.classList.add('open');
+
+  // Load notes for this article
+  document.getElementById('notes-textarea').value = a.notes || '';
+
   _resetProgressBar();
   applyReaderSettings();
 
@@ -2480,6 +2702,8 @@ function openReader(a) {
 }
 
 function closeReader() {
+  saveNotesNow();
+  closeNotes(true);
   const reader = document.getElementById('reader');
   reader.style.transform = '';
   reader.classList.remove('open');
@@ -2758,8 +2982,19 @@ function _updateProgressBar(el) {
   const pct = el.scrollTop / scrollable;
   if (pct < 0.10) return; // don't appear before 10% in
 
+  if (_isFinished) {
+    _progressBar.classList.add('visible');
+    clearTimeout(_progressHideTimer);
+    return;
+  }
+
   _progressFill.style.width = (pct * 100).toFixed(1) + '%';
   _progressBar.classList.add('visible');
+
+  if (pct >= 0.95) {
+    _markFinished();
+    return;
+  }
 
   clearTimeout(_progressHideTimer);
   _progressHideTimer = setTimeout(() => {
@@ -2771,6 +3006,11 @@ function _resetProgressBar() {
   clearTimeout(_progressHideTimer);
   _progressBar.classList.remove('visible');
   _progressFill.style.width = '0%';
+  _progressFill.style.background = '';
+  _progressFill.style.transition = '';
+  _isFinished = false;
+  const pill = document.getElementById('reader-finished-pill');
+  if (pill) pill.classList.remove('show');
 }
 
 document.getElementById('reader').addEventListener('scroll', function() {
@@ -2788,6 +3028,206 @@ document.getElementById('reader').addEventListener('scroll', function() {
     }
   }, 400);
 });
+
+// ── Notes drawer ──────────────────────────────────────────────────────────────
+function toggleNotes() {
+  const drawer = document.getElementById('reader-notes');
+  if (drawer.classList.contains('open')) {
+    closeNotes();
+  } else {
+    openNotes();
+  }
+}
+
+function openNotes() {
+  const drawer = document.getElementById('reader-notes');
+  const btn    = document.getElementById('reader-notes-btn');
+  drawer.classList.add('ready');
+  requestAnimationFrame(() => {
+    drawer.classList.add('open');
+    btn.classList.add('active');
+  });
+  setTimeout(() => document.getElementById('notes-textarea').focus(), 320);
+}
+
+function closeNotes(instant) {
+  saveNotesNow();
+  const drawer = document.getElementById('reader-notes');
+  const btn    = document.getElementById('reader-notes-btn');
+  drawer.classList.remove('open');
+  btn && btn.classList.remove('active');
+  if (instant) {
+    drawer.classList.remove('ready');
+  } else {
+    setTimeout(() => drawer.classList.remove('ready'), 320);
+  }
+}
+
+function onNotesInput() {
+  clearTimeout(_notesSaveTimer);
+  _notesSaveTimer = setTimeout(saveNotesNow, 800);
+}
+
+function saveNotesNow() {
+  clearTimeout(_notesSaveTimer);
+  const id = document.getElementById('reader').dataset.articleId;
+  if (!id) return;
+  const idx = articles.findIndex(a => a.id === id);
+  if (idx < 0) return;
+  const text = document.getElementById('notes-textarea').value;
+  if (articles[idx].notes === text) return;
+  articles[idx].notes = text;
+  persist();
+}
+
+function copyNotes() {
+  const text = document.getElementById('notes-textarea').value;
+  if (!text.trim()) return;
+  const btn = document.getElementById('notes-copy-btn');
+  navigator.clipboard.writeText(text).then(() => {
+    const prev = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = prev; }, 1600);
+  }).catch(() => {});
+}
+
+// ── Highlights ────────────────────────────────────────────────────────────────
+function applyHighlights(a) {
+  const body = document.getElementById('reader-body');
+  const base = body.dataset.cleanHtml || body.innerHTML;
+  if (!a.highlights || !a.highlights.length) {
+    body.innerHTML = base;
+    body.dataset.cleanHtml = base;
+    return;
+  }
+
+  let html = base;
+  // Sort longest first to prevent partial replacement of longer matches
+  const sorted = [...a.highlights].sort((x, y) => y.length - x.length);
+  sorted.forEach(h => {
+    const escaped = esc(h);
+    const safe    = escaped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    html = html.replace(
+      new RegExp(safe, 'g'),
+      `<mark class="rn-hl" data-hl="${escaped}">${escaped}</mark>`
+    );
+  });
+
+  body.innerHTML = html;
+  body.dataset.cleanHtml = base; // Restore reference since innerHTML clears dataset
+}
+
+function addHighlight(text) {
+  const id = document.getElementById('reader').dataset.articleId;
+  if (!id || !text.trim()) return;
+  const idx = articles.findIndex(a => a.id === id);
+  if (idx < 0) return;
+  if (!articles[idx].highlights) articles[idx].highlights = [];
+  if (!articles[idx].highlights.includes(text)) {
+    articles[idx].highlights.push(text);
+    applyHighlights(articles[idx]);
+    persist();
+  }
+}
+
+function removeHighlight(text) {
+  const id = document.getElementById('reader').dataset.articleId;
+  if (!id) return;
+  const idx = articles.findIndex(a => a.id === id);
+  if (idx < 0) return;
+  articles[idx].highlights = (articles[idx].highlights || []).filter(h => h !== text);
+  applyHighlights(articles[idx]);
+  persist();
+}
+
+// Highlight tooltip state
+let _hlMode = null;
+let _hlText = null;
+
+function _showHlTooltip(text, rect, mode) {
+  const tip = document.getElementById('hl-tooltip');
+  _hlMode = mode;
+  _hlText = text;
+  tip.textContent = mode === 'add' ? 'Highlight' : 'Remove highlight';
+  tip.style.top  = Math.max(8, rect.top - 48) + 'px';
+  tip.style.left = (rect.left + rect.width / 2) + 'px';
+  tip.classList.add('visible');
+}
+
+function _hideHlTooltip() {
+  document.getElementById('hl-tooltip').classList.remove('visible');
+  _hlMode = null;
+  _hlText = null;
+}
+
+document.getElementById('hl-tooltip').addEventListener('click', e => {
+  e.stopPropagation();
+  if (_hlMode === 'add' && _hlText)    addHighlight(_hlText);
+  if (_hlMode === 'remove' && _hlText) removeHighlight(_hlText);
+  _hideHlTooltip();
+  window.getSelection()?.removeAllRanges();
+});
+
+// Tap existing highlight to remove
+document.getElementById('reader-body').addEventListener('click', e => {
+  const mark = e.target.closest('mark.rn-hl');
+  if (!mark) return;
+  e.stopPropagation();
+  const text = mark.dataset.hl || mark.textContent;
+  _showHlTooltip(text, mark.getBoundingClientRect(), 'remove');
+});
+
+// Selection change — show "Highlight" tooltip when text is selected in reader
+let _selTimer = null;
+document.addEventListener('selectionchange', () => {
+  clearTimeout(_selTimer);
+  _selTimer = setTimeout(() => {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed) { _hideHlTooltip(); return; }
+
+    const text = sel.toString().trim();
+    if (!text || text.length < 3) { _hideHlTooltip(); return; }
+
+    if (!document.getElementById('reader').classList.contains('open')) {
+      _hideHlTooltip(); return;
+    }
+
+    const range = sel.getRangeAt(0);
+    const body  = document.getElementById('reader-body');
+    if (!body.contains(range.commonAncestorContainer)) { _hideHlTooltip(); return; }
+
+    _showHlTooltip(text, range.getBoundingClientRect(), 'add');
+  }, 120);
+});
+
+// Dismiss tooltip when tapping elsewhere
+document.addEventListener('click', e => {
+  if (!e.target.closest('#hl-tooltip') && !e.target.closest('mark.rn-hl')) {
+    _hideHlTooltip();
+  }
+});
+
+// ── Finished ──────────────────────────────────────────────────────────────────
+function _markFinished() {
+  _isFinished = true;
+
+  _progressFill.style.transition = 'width 0.3s ease-out, background 0.4s ease';
+  _progressFill.style.width      = '100%';
+  _progressFill.style.background = 'var(--green)';
+  _progressBar.classList.add('visible');
+
+  document.getElementById('reader-finished-pill').classList.add('show');
+
+  // Record completedAt once per article
+  const id = document.getElementById('reader').dataset.articleId;
+  if (id) {
+    const idx = articles.findIndex(a => a.id === id);
+    if (idx > -1 && !articles[idx].completedAt) {
+      articles[idx].completedAt = Date.now();
+      persist();
+    }
+  }
+}
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 setMastDate();
