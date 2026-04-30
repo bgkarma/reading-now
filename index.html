@@ -3143,8 +3143,9 @@ function removeHighlight(text) {
 }
 
 // Highlight tooltip state
-let _hlMode = null;
-let _hlText = null;
+let _hlMode    = null;
+let _hlText    = null;
+let _hlHovered = false;
 
 function _showHlTooltip(text, rect, mode) {
   const tip = document.getElementById('hl-tooltip');
@@ -3162,8 +3163,13 @@ function _hideHlTooltip() {
   _hlText = null;
 }
 
-document.getElementById('hl-tooltip').addEventListener('click', e => {
+const _hlTip = document.getElementById('hl-tooltip');
+_hlTip.addEventListener('mouseenter', () => { _hlHovered = true;  });
+_hlTip.addEventListener('mouseleave', () => { _hlHovered = false; });
+
+_hlTip.addEventListener('click', e => {
   e.stopPropagation();
+  _hlHovered = false;
   if (_hlMode === 'add' && _hlText)    addHighlight(_hlText);
   if (_hlMode === 'remove' && _hlText) removeHighlight(_hlText);
   _hideHlTooltip();
@@ -3185,7 +3191,11 @@ document.addEventListener('selectionchange', () => {
   clearTimeout(_selTimer);
   _selTimer = setTimeout(() => {
     const sel = window.getSelection();
-    if (!sel || sel.isCollapsed) { _hideHlTooltip(); return; }
+    if (!sel || sel.isCollapsed) {
+      // Don't hide if the mouse is over the tooltip (desktop: user is about to click it)
+      if (!_hlHovered) _hideHlTooltip();
+      return;
+    }
 
     const text = sel.toString().trim();
     if (!text || text.length < 3) { _hideHlTooltip(); return; }
