@@ -3124,10 +3124,9 @@ function saveNotesNow() {
 
 // ── Listen / TTS ──────────────────────────────────────────────────────────────
 (function () {
-  const synth    = window.speechSynthesis;
+  const synth     = window.speechSynthesis;
   const VOICE_KEY = 'rn_tts_voice';
 
-  // Grey out button if TTS unavailable
   if (!synth) {
     document.addEventListener('DOMContentLoaded', () => {
       const btn = document.getElementById('reader-listen-btn');
@@ -3136,38 +3135,51 @@ function saveNotesNow() {
     return;
   }
 
-  let _utterance  = null;
-  let _silentCtx  = null;
-  let _silentOsc  = null;
+  let _utterance = null;
+  let _fullText  = '';  // full article text for this read session
+  let _charIndex = 0;   // last known position, updated word-by-word
 
-  // ── Silent audio loop ────────────────────────────────────────────────────
-  // Keeps the iOS audio session alive so speech continues when the screen
-  // locks. A near-silent (0.001 gain) oscillator tricks iOS into thinking
-  // audio is still playing, preventing the session from being suspended.
-  function _startSilentAudio() {
+  // ── Silent audio element ─────────────────────────────────────────────────
+  // Builds a 1-second silent WAV at runtime and plays it on a loop while TTS
+  // is active. An <audio> element holds the iOS audio session open through
+  // screen lock more reliably than an AudioContext oscillator.
+  const _silentEl = (() => {
     try {
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      if (!Ctx) return;
-      _silentCtx = new Ctx();
-      const gain = _silentCtx.createGain();
-      gain.gain.value = 0.001;
-      _silentOsc = _silentCtx.createOscillator();
-      _silentOsc.connect(gain);
-      gain.connect(_silentCtx.destination);
-      _silentOsc.start();
-    } catch (e) { /* not supported — graceful fallback */ }
+      const sr  = 44100;
+      const len = sr; // 1 second of silence
+      const ab  = new ArrayBuffer(44 + len * 2);
+      const dv  = new DataView(ab);
+      const ws  = (off, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(off + i, s.charCodeAt(i)); };
+      ws(0, 'RIFF'); dv.setUint32(4, 36 + len * 2, true);
+      ws(8, 'WAVE'); ws(12, 'fmt ');
+      dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+      dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true);
+      dv.setUint16(32, 2,  true); dv.setUint16(34, 16, true);
+      ws(36, 'data'); dv.setUint32(40, len * 2, true);
+      // Sample bytes default to 0 — silence
+      const el  = document.createElement('audio');
+      el.src    = URL.createObjectURL(new Blob([ab], { type: 'audio/wav' }));
+      el.loop   = true;
+      el.volume = 0.01;
+      return el;
+    } catch (e) { return null; }
+  })();
+
+  function _startSilentAudio() {
+    if (_silentEl) _silentEl.play().catch(() => {});
   }
 
   function _stopSilentAudio() {
-    try { if (_silentOsc) { _silentOsc.stop(); _silentOsc = null; } } catch (e) {}
-    try { if (_silentCtx) { _silentCtx.close(); _silentCtx = null; } } catch (e) {}
+    if (_silentEl) { _silentEl.pause(); _silentEl.currentTime = 0; }
   }
 
   // ── Voice list ───────────────────────────────────────────────────────────
   function _populateVoices() {
     const sel = document.getElementById('rs-voice-select');
     if (!sel) return;
-    const voices = synth.getVoices().filter(v => v.lang.startsWith('en'));
+    const voices = synth.getVoices()
+      .filter(v => v.lang.startsWith('en'))
+      .sort((a, b) => a.name.localeCompare(b.name));
     if (!voices.length) return;
     const saved = localStorage.getItem(VOICE_KEY) || '';
     sel.innerHTML = '<option value="">Default</option>' +
@@ -3176,7 +3188,6 @@ function saveNotesNow() {
       ).join('');
   }
 
-  // Voices load async; listen for the event and also try on DOMContentLoaded
   synth.addEventListener('voiceschanged', _populateVoices);
   document.addEventListener('DOMContentLoaded', _populateVoices);
 
@@ -3194,10 +3205,47 @@ function saveNotesNow() {
     return synth.getVoices().find(v => v.name === name) || null;
   }
 
+  // Start speaking a slice of text. startOffset is where this slice begins
+  // within _fullText, so boundary events can keep _charIndex accurate.
+  function _speak(text, startOffset) {
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate  = 0.92;
+    u.pitch = 1;
+    const v = _getSelectedVoice();
+    if (v) u.voice = v;
+
+    u.onboundary = (e) => { _charIndex = startOffset + (e.charIndex || 0); };
+    u.onstart    = () => { _setBtn('Pause',  true); _startSilentAudio(); };
+    u.onpause    = () =>   _setBtn('Resume', true);
+    u.onresume   = () =>   _setBtn('Pause',  true);
+    u.onend      = () => { _setBtn('Listen', false); _stopSilentAudio(); _utterance = null; };
+    u.onerror    = (e) => {
+      if (e.error === 'interrupted') return; // we cancelled intentionally
+      _setBtn('Listen', false); _stopSilentAudio(); _utterance = null;
+    };
+
+    _utterance = u;
+    synth.speak(u);
+  }
+
   // ── Public API ───────────────────────────────────────────────────────────
+
+  // Called by the voice dropdown — switches voice immediately if playing
   window.setReaderVoice = function (name) {
-    if (name) { localStorage.setItem(VOICE_KEY, name); }
-    else       { localStorage.removeItem(VOICE_KEY); }
+    const wasSpeaking = synth.speaking;
+    const resumeFrom  = _charIndex;
+
+    if (name) localStorage.setItem(VOICE_KEY, name);
+    else       localStorage.removeItem(VOICE_KEY);
+
+    if (wasSpeaking) {
+      synth.cancel();
+      // Brief pause lets the cancellation settle before we restart
+      setTimeout(() => {
+        const remaining = _fullText.slice(resumeFrom);
+        if (remaining.trim()) _speak(remaining, resumeFrom);
+      }, 200);
+    }
   };
 
   window.toggleListen = function () {
@@ -3212,36 +3260,25 @@ function saveNotesNow() {
       return;
     }
 
-    // Start fresh
     synth.cancel();
     _stopSilentAudio();
     _utterance = null;
 
     const title = (document.getElementById('reader-title') || {}).textContent || '';
     const body  = (document.getElementById('reader-body')  || {}).textContent || '';
-    const text  = (title.trim() ? title.trim() + '.\n\n' : '') + body.trim();
-    if (!text) return;
+    _fullText   = (title.trim() ? title.trim() + '.\n\n' : '') + body.trim();
+    _charIndex  = 0;
 
-    const u   = new SpeechSynthesisUtterance(text);
-    u.rate    = 0.92;
-    u.pitch   = 1;
-    const voice = _getSelectedVoice();
-    if (voice) u.voice = voice;
-
-    u.onstart  = () => { _setBtn('Pause',  true); _startSilentAudio(); };
-    u.onpause  = () =>   _setBtn('Resume', true);
-    u.onresume = () => { _setBtn('Pause',  true); };
-    u.onend    = () => { _setBtn('Listen', false); _stopSilentAudio(); _utterance = null; };
-    u.onerror  = () => { _setBtn('Listen', false); _stopSilentAudio(); _utterance = null; };
-
-    _utterance = u;
-    synth.speak(u);
+    if (!_fullText) return;
+    _speak(_fullText, 0);
   };
 
   window.stopListen = function () {
     synth.cancel();
     _stopSilentAudio();
     _utterance = null;
+    _fullText  = '';
+    _charIndex = 0;
     _setBtn('Listen', false);
   };
 })();
