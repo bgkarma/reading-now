@@ -1427,6 +1427,24 @@
   .reader-notes-btn:hover { color: var(--accent); border-bottom-color: var(--accent); }
   .reader-notes-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 
+  /* ── Listen (TTS) button in reader nav ─────────────────────────────────── */
+  .reader-listen-btn {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    color: var(--text-light);
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    padding: 0;
+    line-height: 1.2;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .reader-listen-btn:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  .reader-listen-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .reader-listen-btn.unavailable { opacity: 0.35; cursor: default; pointer-events: none; }
+
   /* ── Notes drawer ──────────────────────────────────────────────────────── */
   .reader-notes {
     position: fixed;
@@ -1830,6 +1848,7 @@
     <nav class="reader-nav">
       <button class="reader-back" onclick="closeReader()">← Back to articles</button>
       <div class="reader-controls">
+        <button class="reader-listen-btn" id="reader-listen-btn" onclick="toggleListen()">Listen</button>
         <button class="reader-notes-btn" id="reader-notes-btn" onclick="toggleNotes()">Notes</button>
         <button class="reader-font-btn" id="reader-font-btn" onclick="toggleReaderSettings(event)">Aa</button>
         <button class="reader-ext" id="reader-ext">Copy link</button>
@@ -2706,6 +2725,7 @@ function openReader(a) {
 function closeReader() {
   saveNotesNow();
   closeNotes(true);
+  stopListen();
   const reader = document.getElementById('reader');
   reader.style.transform = '';
   reader.classList.remove('open');
@@ -3081,6 +3101,70 @@ function saveNotesNow() {
   articles[idx].notes = text;
   persist();
 }
+
+// ── Listen / TTS ──────────────────────────────────────────────────────────────
+(function () {
+  const synth = window.speechSynthesis;
+
+  // Grey out button immediately if TTS unavailable
+  if (!synth) {
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('reader-listen-btn');
+      if (btn) btn.classList.add('unavailable');
+    });
+    return;
+  }
+
+  let _utterance = null;
+
+  function _setBtn(label, active) {
+    const btn = document.getElementById('reader-listen-btn');
+    if (!btn) return;
+    btn.textContent = label;
+    btn.classList.toggle('active', !!active);
+  }
+
+  window.toggleListen = function () {
+    if (synth.speaking && !synth.paused) {
+      synth.pause();
+      _setBtn('Resume', true);
+      return;
+    }
+    if (synth.paused) {
+      synth.resume();
+      _setBtn('Pause', true);
+      return;
+    }
+
+    // Start fresh read
+    synth.cancel();
+    _utterance = null;
+
+    const title = (document.getElementById('reader-title') || {}).textContent || '';
+    const body  = (document.getElementById('reader-body')  || {}).textContent || '';
+    const text  = (title.trim() ? title.trim() + '.\n\n' : '') + body.trim();
+    if (!text) return;
+
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate  = 0.92;  // slightly slower than default — easier to follow on a walk
+    u.pitch = 1;
+
+    u.onstart  = () => _setBtn('Pause',  true);
+    u.onpause  = () => _setBtn('Resume', true);
+    u.onresume = () => _setBtn('Pause',  true);
+    u.onend    = () => { _setBtn('Listen', false); _utterance = null; };
+    u.onerror  = () => { _setBtn('Listen', false); _utterance = null; };
+
+    _utterance = u;
+    synth.speak(u);
+  };
+
+  window.stopListen = function () {
+    synth.cancel();
+    _utterance = null;
+    _setBtn('Listen', false);
+  };
+})();
 
 function copyNotes() {
   const text = document.getElementById('notes-textarea').value;
