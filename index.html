@@ -2719,6 +2719,7 @@ function openReader(a) {
   }
 
   const body = document.getElementById('reader-body');
+  let _cleanHtml = '';
   if (a.text) {
     const cleaned = a.text
       .replace(/\[([^\]\n]*)\]\([^)\n]+\)/g, '$1')
@@ -2731,19 +2732,25 @@ function openReader(a) {
       .replace(/\n{3,}/g, '\n\n')
       .trim();
 
-    body.innerHTML = cleaned
+    _cleanHtml = cleaned
       .split(/\n{2,}/)
       .map(p => p.trim()).filter(p => p.length > 0)
       .map(p => `<p>${esc(p).replace(/\n/g,'<br>')}</p>`)
       .join('');
+    body.innerHTML = _cleanHtml;
   } else if (a.url) {
-    body.innerHTML = `<p style="color:var(--text-light);font-style:italic">No text saved. Use the link above to open the original.</p>`;
+    _cleanHtml = `<p style="color:var(--text-light);font-style:italic">No text saved. Use the link above to open the original.</p>`;
+    body.innerHTML = _cleanHtml;
   } else {
-    body.innerHTML = `<p style="color:var(--text-light);font-style:italic">No content saved for this article.</p>`;
+    _cleanHtml = `<p style="color:var(--text-light);font-style:italic">No content saved for this article.</p>`;
+    body.innerHTML = _cleanHtml;
   }
 
-  // Store clean HTML snapshot for highlight re-application
-  body.dataset.cleanHtml = body.innerHTML;
+  // Store the pre-parsed HTML string so entity encoding stays consistent
+  // with esc() used during highlight matching. Do NOT use body.innerHTML here —
+  // the browser decodes &quot; and &gt; in text nodes on serialisation, which
+  // breaks the regex in applyHighlights for any selected text containing " or >.
+  body.dataset.cleanHtml = _cleanHtml;
   applyHighlights(a);
 
   const reader = document.getElementById('reader');
