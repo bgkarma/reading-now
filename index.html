@@ -1039,6 +1039,26 @@
     padding: 0 24px 80px;
   }
 
+  /* ── Reader layout variants (desktop only) ───────────────────────────── */
+  @media (min-width: 860px) {
+    .reader-inner[data-layout="wide"] {
+      max-width: 960px;
+    }
+
+    .reader-inner[data-layout="columns"] {
+      max-width: 1100px;
+    }
+
+    .reader-inner[data-layout="columns"] .reader-body {
+      columns: 2;
+      column-gap: 52px;
+    }
+
+    .reader-inner[data-layout="columns"] .reader-body p {
+      break-inside: avoid;
+    }
+  }
+
   .reader-nav {
     display: flex;
     align-items: center;
@@ -1885,7 +1905,14 @@
             <button class="rs-bg-btn rs-bg-dark"           id="rs-bg-dark"    onclick="setReaderBg('dark')"    title="Dark"></button>
           </div>
           <div class="rs-divider"></div>
-          <div class="rs-label">Voice</div>
+          <div class="rs-label">Width</div>
+          <div class="rs-row">
+            <button class="rs-family-btn active" id="rs-layout-narrow"  onclick="setReaderLayout('narrow')">Narrow</button>
+            <button class="rs-family-btn"        id="rs-layout-wide"    onclick="setReaderLayout('wide')">Wide</button>
+            <button class="rs-family-btn"        id="rs-layout-columns" onclick="setReaderLayout('columns')">Columns</button>
+          </div>
+          <div class="rs-divider"></div>
+          <label for="rs-voice-select" class="rs-label">Voice</label>
           <div class="rs-row">
             <select class="rs-voice-select" id="rs-voice-select" onchange="setReaderVoice(this.value)">
               <option value="">Default</option>
@@ -2898,8 +2925,8 @@ async function manualRefresh() {
 }
 
 // ── Reader settings ───────────────────────────────────────────────────────────
-const RS_SIZES = [15, 17, 19, 21, 23];
-const RS_LHS   = [1.85, 1.8, 1.75, 1.7, 1.65];
+const RS_SIZES = [15, 17, 19, 21, 23, 26, 30];
+const RS_LHS   = [1.85, 1.8, 1.75, 1.7, 1.65, 1.6, 1.55];
 
 function getReaderSizeIdx() {
   return parseInt(localStorage.getItem('rn_font_idx') || '1', 10);
@@ -2909,6 +2936,7 @@ function applyReaderSettings() {
   const idx    = getReaderSizeIdx();
   const family = localStorage.getItem('rn_font_family') || 'serif';
   const bg     = localStorage.getItem('rn_reader_bg')   || 'default';
+  const layout = localStorage.getItem('rn_reader_layout') || 'narrow';
 
   const fontStack = family === 'serif'
     ? "Georgia, 'Times New Roman', serif"
@@ -2923,9 +2951,13 @@ function applyReaderSettings() {
   const reader = document.getElementById('reader');
   reader.dataset.bg = bg === 'default' ? '' : bg;
 
+  // Layout (desktop only — the CSS media query handles mobile suppression)
+  const inner = document.querySelector('.reader-inner');
+  inner.dataset.layout = layout;
+
   // Aa button highlights when anything is non-default
   document.getElementById('reader-font-btn')
-    .classList.toggle('active', idx !== 1 || family !== 'serif' || bg !== 'default');
+    .classList.toggle('active', idx !== 1 || family !== 'serif' || bg !== 'default' || layout !== 'narrow');
 
   // Size buttons
   document.getElementById('rs-size-down').disabled = idx === 0;
@@ -2938,6 +2970,11 @@ function applyReaderSettings() {
   // Background buttons
   ['default', 'sepia', 'dark'].forEach(b => {
     document.getElementById('rs-bg-' + b).classList.toggle('active', bg === b);
+  });
+
+  // Layout buttons
+  ['narrow', 'wide', 'columns'].forEach(l => {
+    document.getElementById('rs-layout-' + l).classList.toggle('active', layout === l);
   });
 }
 
@@ -2956,6 +2993,11 @@ function setReaderBg(bg) {
   localStorage.setItem('rn_reader_bg', bg);
   if (bg === 'dark')  { applyTheme(true);  return; }
   if (bg === 'sepia') { applyTheme(false); return; }
+  applyReaderSettings();
+}
+
+function setReaderLayout(layout) {
+  localStorage.setItem('rn_reader_layout', layout);
   applyReaderSettings();
 }
 
