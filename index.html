@@ -1443,7 +1443,8 @@
   }
 
   #reader[data-bg="dark"] .reader-body mark.rn-hl {
-    background: rgba(200, 168, 60, 0.16);
+    background: rgba(230, 195, 60, 0.42);
+    color: #f0e8c8;
   }
 
   .hl-tooltip {
@@ -1541,6 +1542,146 @@
   .reader-notes-btn.flash,
   .reader-font-btn.flash {
     animation: icon-btn-flash 0.7s ease-out forwards;
+  }
+
+  /* ── Delete confirm dialog ─────────────────────────────────────────────── */
+  .del-confirm-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(28,26,24,0.3);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .del-confirm-overlay.open { display: flex; }
+
+  .del-confirm-panel {
+    background: var(--surface-alt);
+    border-radius: 6px;
+    padding: 32px 36px 28px;
+    width: 100%;
+    max-width: 300px;
+    box-shadow: var(--shadow-md);
+    text-align: center;
+  }
+
+  .del-confirm-title {
+    font-size: 18px;
+    font-weight: normal;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .del-confirm-sub {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12px;
+    color: var(--text-light);
+    margin-bottom: 26px;
+    line-height: 1.5;
+  }
+
+  .del-confirm-btns {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .del-cancel-btn {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+    color: var(--text-muted);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 7px 20px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .del-cancel-btn:hover { color: var(--text); border-color: var(--text-muted); }
+
+  .del-remove-btn {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+    color: #fff;
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 20px;
+    padding: 7px 20px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .del-remove-btn:hover { opacity: 0.82; }
+
+  /* ── Undo toast ─────────────────────────────────────────────────────────── */
+  .undo-toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--text);
+    border-radius: 8px;
+    padding: 13px 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+    z-index: 600;
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.34,1.2,0.64,1), opacity 0.25s ease;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .undo-toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  .undo-toast-label { color: rgba(255,255,255,0.8); }
+
+  .undo-btn {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 4px;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 4px 11px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .undo-btn:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.4); }
+
+  .undo-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    width: 100%;
+    background: rgba(255,255,255,0.25);
+    border-radius: 0 0 8px 8px;
+    transform-origin: left;
+  }
+
+  @keyframes undo-drain {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
+  }
+
+  .undo-toast.show .undo-progress {
+    animation: undo-drain 10s linear forwards;
   }
 
   /* ── Notes drawer ──────────────────────────────────────────────────────── */
@@ -2509,9 +2650,9 @@ function editArt(id, e) {
 
 function delArt(id, e) {
   e.stopPropagation();
-  localStorage.removeItem('rn_pos_' + id);
-  articles = articles.filter(a => a.id!==id);
-  persist(); renderArticles();
+  const item = articles.find(a => a.id === id);
+  if (!item) return;
+  showDelConfirm('art', id, item);
 }
 
 // ── Book modal ────────────────────────────────────────────────────────────────
@@ -2733,8 +2874,99 @@ function saveBook() {
 
 function delBook(id, e) {
   e.stopPropagation();
-  books = books.filter(b => b.id!==id);
-  persist(); renderBooks();
+  const item = books.find(b => b.id === id);
+  if (!item) return;
+  showDelConfirm('book', id, item);
+}
+
+// ── Delete confirm + undo ──────────────────────────────────────────────────────
+let _delPending = null;
+let _undoTimer  = null;
+
+function showDelConfirm(type, id, item) {
+  _delPending = { type, id, item };
+  const label = item.title || (type === 'art' ? 'this article' : 'this book');
+  document.getElementById('del-confirm-sub').textContent =
+    label.length > 55 ? label.slice(0, 52) + '…' : label;
+  document.getElementById('del-confirm-overlay').classList.add('open');
+}
+
+function cancelDel() {
+  _delPending = null;
+  document.getElementById('del-confirm-overlay').classList.remove('open');
+}
+
+function confirmDel() {
+  if (!_delPending) return;
+  const { type, id, item } = _delPending;
+  _delPending = null;
+  document.getElementById('del-confirm-overlay').classList.remove('open');
+
+  if (type === 'art') {
+    articles = articles.filter(a => a.id !== id);
+    persist(); renderArticles();
+  } else {
+    books = books.filter(b => b.id !== id);
+    persist(); renderBooks();
+  }
+
+  showUndoToast(type, id, item);
+}
+
+function showUndoToast(type, id, item) {
+  const toast = document.getElementById('undo-toast');
+  // Clean up previous pending undo if it was an article
+  if (toast._undoType === 'art' && toast._undoId) {
+    localStorage.removeItem('rn_pos_' + toast._undoId);
+  }
+  clearTimeout(_undoTimer);
+
+  document.getElementById('undo-toast-label').textContent =
+    type === 'art' ? 'Article removed' : 'Book removed';
+
+  // Restart progress bar animation
+  const bar = document.getElementById('undo-progress');
+  bar.style.animation = 'none';
+  void bar.offsetWidth;
+  toast._undoType = type;
+  toast._undoId   = id;
+  toast._undoItem = item;
+
+  toast.classList.add('show');
+  bar.style.animation = '';
+
+  _undoTimer = setTimeout(dismissUndoToast, 10000);
+}
+
+function dismissUndoToast() {
+  clearTimeout(_undoTimer);
+  const toast = document.getElementById('undo-toast');
+  if (toast._undoType === 'art' && toast._undoId) {
+    localStorage.removeItem('rn_pos_' + toast._undoId);
+  }
+  toast._undoType = null;
+  toast._undoId   = null;
+  toast._undoItem = null;
+  toast.classList.remove('show');
+}
+
+function undoDel() {
+  clearTimeout(_undoTimer);
+  const toast = document.getElementById('undo-toast');
+  const { _undoType: type, _undoItem: item } = toast;
+  toast._undoType = null;
+  toast._undoId   = null;
+  toast._undoItem = null;
+  toast.classList.remove('show');
+
+  if (!item) return;
+  if (type === 'art') {
+    articles.unshift(item);
+    persist(); renderArticles();
+  } else {
+    books.unshift(item);
+    persist(); renderBooks();
+  }
 }
 
 function editBook(id, e) {
@@ -2948,6 +3180,10 @@ document.getElementById('about-overlay').addEventListener('click', function(e) {
 
 document.getElementById('setup-overlay').addEventListener('click', function(e) {
   if (e.target === this) closeSetup();
+});
+
+document.getElementById('del-confirm-overlay').addEventListener('click', function(e) {
+  if (e.target === this) cancelDel();
 });
 
 ['art-overlay','book-overlay'].forEach(id => {
@@ -3608,5 +3844,24 @@ setMastDate();
   });
 })();
 </script>
+
+<!-- Delete confirm dialog -->
+<div class="del-confirm-overlay" id="del-confirm-overlay">
+  <div class="del-confirm-panel">
+    <div class="del-confirm-title">Remove this?</div>
+    <div class="del-confirm-sub" id="del-confirm-sub"></div>
+    <div class="del-confirm-btns">
+      <button class="del-cancel-btn" onclick="cancelDel()">Cancel</button>
+      <button class="del-remove-btn" onclick="confirmDel()">Remove</button>
+    </div>
+  </div>
+</div>
+
+<!-- Undo toast -->
+<div class="undo-toast" id="undo-toast">
+  <span class="undo-toast-label" id="undo-toast-label"></span>
+  <button class="undo-btn" onclick="undoDel()">Undo</button>
+  <div class="undo-progress" id="undo-progress"></div>
+</div>
 </body>
 </html>
