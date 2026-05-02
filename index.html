@@ -1073,18 +1073,26 @@
   }
 
   .reader-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     background: none;
-    border: none;
+    border: 1px solid var(--border);
+    border-radius: 20px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 12px;
+    font-size: 11px;
     letter-spacing: 0.5px;
     color: var(--text-muted);
     cursor: pointer;
-    padding: 0;
-    transition: color 0.15s;
+    padding: 5px 12px 5px 9px;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
   }
 
-  .reader-back:hover { color: var(--text); }
+  .reader-back:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
 
   .reader-controls {
     display: flex;
@@ -1092,9 +1100,9 @@
     gap: 16px;
   }
 
-  .reader-ext,
-  .reader-font-btn {
+  .reader-ext {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
     color: var(--text-light);
     background: none;
     border: none;
@@ -1102,20 +1110,42 @@
     cursor: pointer;
     padding: 0;
     transition: color 0.15s, border-color 0.15s;
+    display: none;
   }
 
-  .reader-ext { font-size: 11px; display: none; }
+  .reader-ext:hover { color: var(--accent); border-bottom-color: var(--accent); }
 
   .reader-font-btn {
-    font-size: 13px;
-    letter-spacing: 0.5px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
     line-height: 1;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    padding: 0;
   }
 
-  .reader-ext:hover,
-  .reader-font-btn:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  .reader-font-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
 
-  .reader-font-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .reader-font-btn.active {
+    color: var(--text-muted);
+    border-color: var(--border);
+    background: none;
+  }
 
   .reader-source-link {
     color: inherit;
@@ -1444,39 +1474,74 @@
 
   /* ── Notes button in reader nav ────────────────────────────────────────── */
   .reader-notes-btn {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 13px;
-    letter-spacing: 0.5px;
-    color: var(--text-light);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
     background: none;
-    border: none;
-    border-bottom: 1px solid var(--border);
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
     padding: 0;
-    line-height: 1.2;
-    transition: color 0.15s, border-color 0.15s;
   }
 
-  .reader-notes-btn:hover { color: var(--accent); border-bottom-color: var(--accent); }
-  .reader-notes-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .reader-notes-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  .reader-notes-btn.active {
+    color: var(--text-muted);
+    border-color: var(--border);
+    background: none;
+  }
 
   /* ── Listen (TTS) button in reader nav ─────────────────────────────────── */
   .reader-listen-btn {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 13px;
-    letter-spacing: 0.5px;
-    color: var(--text-light);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
     background: none;
-    border: none;
-    border-bottom: 1px solid var(--border);
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
     padding: 0;
-    line-height: 1.2;
-    transition: color 0.15s, border-color 0.15s;
   }
-  .reader-listen-btn:hover { color: var(--accent); border-bottom-color: var(--accent); }
-  .reader-listen-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .reader-listen-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  .reader-listen-btn.active {
+    color: var(--text-muted);
+    border-color: var(--border);
+    background: none;
+  }
+
   .reader-listen-btn.unavailable { opacity: 0.35; cursor: default; pointer-events: none; }
+
+  /* ── Icon button tap flash ──────────────────────────────────────────────── */
+  @keyframes icon-btn-flash {
+    0%   { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+    45%  { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+    100% { border-color: var(--border); background: transparent;        color: var(--text-muted); }
+  }
+
+  .reader-listen-btn.flash,
+  .reader-notes-btn.flash,
+  .reader-font-btn.flash {
+    animation: icon-btn-flash 0.7s ease-out forwards;
+  }
 
   /* ── Notes drawer ──────────────────────────────────────────────────────── */
   .reader-notes {
@@ -1879,11 +1944,11 @@
   <div class="reader-resume" id="reader-resume">Resumed from where you left off</div>
   <div class="reader-inner">
     <nav class="reader-nav">
-      <button class="reader-back" onclick="closeReader()">← Back to articles</button>
+      <button class="reader-back" onclick="closeReader()"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3L5 8l5 5"/></svg>Back to articles</button>
       <div class="reader-controls">
-        <button class="reader-listen-btn" id="reader-listen-btn" onclick="toggleListen()">Listen</button>
-        <button class="reader-notes-btn" id="reader-notes-btn" onclick="toggleNotes()">Notes</button>
-        <button class="reader-font-btn" id="reader-font-btn" onclick="toggleReaderSettings(event)">Aa</button>
+        <button class="reader-listen-btn" id="reader-listen-btn" onclick="toggleListen()" title="Listen"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.5 9a5.5 5.5 0 0 1 11 0"/><rect x="1.5" y="9" width="2.5" height="3.5" rx="1.25"/><rect x="12" y="9" width="2.5" height="3.5" rx="1.25"/></svg></button>
+        <button class="reader-notes-btn" id="reader-notes-btn" onclick="toggleNotes()" title="Notes"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 2.5a1.5 1.5 0 0 1 2.1 2.1L5 13.5H2.5v-2.5L10.5 2.5z"/></svg></button>
+        <button class="reader-font-btn" id="reader-font-btn" onclick="toggleReaderSettings(event)" title="Text settings">Aa</button>
         <button class="reader-ext" id="reader-ext">Copy link</button>
         <div class="reader-settings" id="reader-settings">
           <div class="rs-label">Text Size</div>
@@ -3241,10 +3306,16 @@ function saveNotesNow() {
   document.addEventListener('DOMContentLoaded', _populateVoices);
 
   // ── Helpers ──────────────────────────────────────────────────────────────
+  const _LISTEN_ICONS = {
+    Listen: `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.5 9a5.5 5.5 0 0 1 11 0"/><rect x="1.5" y="9" width="2.5" height="3.5" rx="1.25"/><rect x="12" y="9" width="2.5" height="3.5" rx="1.25"/></svg>`,
+    Pause:  `<svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><rect x="2.5" y="2" width="4" height="12" rx="1"/><rect x="9.5" y="2" width="4" height="12" rx="1"/></svg>`,
+    Resume: `<svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5l10 5.5-10 5.5z"/></svg>`,
+  };
   function _setBtn(label, active) {
     const btn = document.getElementById('reader-listen-btn');
     if (!btn) return;
-    btn.textContent = label;
+    btn.innerHTML = _LISTEN_ICONS[label] || _LISTEN_ICONS.Listen;
+    btn.title = label;
     btn.classList.toggle('active', !!active);
   }
 
@@ -3523,6 +3594,18 @@ setMastDate();
   if (!getKey()) {
     setTimeout(openSetup, 600);
   }
+
+  // Brief tap flash on reader icon buttons
+  ['reader-listen-btn', 'reader-notes-btn', 'reader-font-btn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      btn.classList.remove('flash');
+      void btn.offsetWidth; // restart animation if clicked again quickly
+      btn.classList.add('flash');
+      setTimeout(() => btn.classList.remove('flash'), 700);
+    });
+  });
 })();
 </script>
 </body>
