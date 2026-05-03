@@ -2090,7 +2090,7 @@
         <button class="reader-listen-btn" id="reader-listen-btn" onclick="toggleListen()" title="Listen"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.5 9a5.5 5.5 0 0 1 11 0"/><rect x="1.5" y="9" width="2.5" height="3.5" rx="1.25"/><rect x="12" y="9" width="2.5" height="3.5" rx="1.25"/></svg></button>
         <button class="reader-notes-btn" id="reader-notes-btn" onclick="toggleNotes()" title="Notes"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 2.5a1.5 1.5 0 0 1 2.1 2.1L5 13.5H2.5v-2.5L10.5 2.5z"/></svg></button>
         <button class="reader-font-btn" id="reader-font-btn" onclick="toggleReaderSettings(event)" title="Text settings">Aa</button>
-        <button class="reader-ext" id="reader-ext">Copy link</button>
+        <button class="reader-ext" id="reader-ext">Copy URL</button>
         <div class="reader-settings" id="reader-settings">
           <div class="rs-label">Text Size</div>
           <div class="rs-row">
@@ -2123,6 +2123,11 @@
             <select class="rs-voice-select" id="rs-voice-select" onchange="setReaderVoice(this.value)">
               <option value="">Default</option>
             </select>
+          </div>
+          <div class="rs-divider"></div>
+          <div class="rs-label">Open In</div>
+          <div class="rs-row">
+            <button class="rs-family-btn" onclick="openInSafariReader()">Safari Reader</button>
           </div>
         </div>
       </div>
@@ -3331,6 +3336,15 @@ function setReaderLayout(layout) {
 function toggleReaderSettings(e) {
   e.stopPropagation();
   document.getElementById('reader-settings').classList.toggle('open');
+}
+
+function openInSafariReader() {
+  const reader = document.getElementById('reader');
+  const articleId = reader.dataset.articleId;
+  const article = articles.find(a => String(a.id) === String(articleId));
+  if (!article || !article.url) return;
+  // safari-reader:// works on iOS Safari; on desktop it falls back to opening the URL normally
+  window.open('safari-reader://' + article.url, '_blank', 'noopener,noreferrer');
 }
 
 document.addEventListener('click', e => {
