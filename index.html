@@ -3343,8 +3343,8 @@ function openInSafariReader() {
   const articleId = reader.dataset.articleId;
   const article = articles.find(a => String(a.id) === String(articleId));
   if (!article || !article.url) return;
-  // safari-reader:// works on iOS Safari; on desktop it falls back to opening the URL normally
-  window.open('safari-reader://' + article.url, '_blank', 'noopener,noreferrer');
+  // Opens the original article URL — Safari will show the Reader button in the address bar automatically
+  window.open(article.url, '_blank', 'noopener,noreferrer');
 }
 
 document.addEventListener('click', e => {
