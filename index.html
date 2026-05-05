@@ -2125,9 +2125,12 @@
             </select>
           </div>
           <div class="rs-divider"></div>
-          <div class="rs-label">Open In</div>
+          <div class="rs-label">Speed</div>
           <div class="rs-row">
-            <button class="rs-family-btn" onclick="openInSafariReader()">Safari Reader</button>
+            <button class="rs-family-btn" id="rs-speed-08" onclick="setReaderSpeed(0.8)">0.8×</button>
+            <button class="rs-family-btn" id="rs-speed-10" onclick="setReaderSpeed(1.0)">1.0×</button>
+            <button class="rs-family-btn" id="rs-speed-12" onclick="setReaderSpeed(1.2)">1.2×</button>
+            <button class="rs-family-btn" id="rs-speed-15" onclick="setReaderSpeed(1.5)">1.5×</button>
           </div>
         </div>
       </div>
@@ -2192,7 +2195,6 @@ const KEY_STORE  = 'rn_app_key';
 let articles = [], books = [], bookFilter = 'all', rating = 0;
 let selectedBook = null;
 let searchDebounce = null;
-let _artSortable = null;
 let _bookSortable = null;
 let _notesSaveTimer = null;
 let _isFinished = false;
@@ -2318,7 +2320,6 @@ function renderArticles() {
     li.className  = 'article-card';
     li.dataset.id = a.id;
     li.innerHTML  = `
-      <span class="drag-handle" title="Drag to reorder">⠿</span>
       <span class="article-num">${String(i+1).padStart(2,'0')}</span>
       <div class="article-body">
         <div class="article-title">${esc(a.title)}</div>
@@ -2334,38 +2335,12 @@ function renderArticles() {
       </div>
     `;
     li.addEventListener('click', e => {
-      if (e.target.closest('.article-actions') ||
-          e.target.classList.contains('drag-handle')) return;
+      if (e.target.closest('.article-actions')) return;
       openReader(a);
     });
     list.appendChild(li);
   });
 
-  initArticleSortable();
-}
-
-function initArticleSortable() {
-  if (_artSortable) { _artSortable.destroy(); _artSortable = null; }
-  const list = document.getElementById('art-list');
-  if (!list.querySelector('.article-card')) return;
-
-  _artSortable = Sortable.create(list, {
-    handle:      '.drag-handle',
-    animation:   180,
-    easing:      'cubic-bezier(0.25, 1, 0.5, 1)',
-    ghostClass:  'sortable-ghost',
-    chosenClass: 'sortable-chosen',
-    dragClass:   'sortable-drag',
-    onEnd() {
-      const ids = Array.from(list.querySelectorAll('.article-card'))
-                       .map(el => el.dataset.id);
-      articles = ids.map(id => articles.find(a => a.id === id)).filter(Boolean);
-      persist();
-      list.querySelectorAll('.article-card').forEach((card, i) => {
-        card.querySelector('.article-num').textContent = String(i+1).padStart(2,'0');
-      });
-    }
-  });
 }
 
 // ── Render books ──────────────────────────────────────────────────────────────
@@ -3308,6 +3283,13 @@ function applyReaderSettings() {
   ['narrow', 'wide', 'columns'].forEach(l => {
     document.getElementById('rs-layout-' + l).classList.toggle('active', layout === l);
   });
+
+  // Speed buttons
+  const speed = parseFloat(localStorage.getItem('rn_tts_speed') || '1.0');
+  [['08', 0.8], ['10', 1.0], ['12', 1.2], ['15', 1.5]].forEach(([key, val]) => {
+    const el = document.getElementById('rs-speed-' + key);
+    if (el) el.classList.toggle('active', speed === val);
+  });
 }
 
 function changeReaderFontSize(dir) {
@@ -3338,13 +3320,9 @@ function toggleReaderSettings(e) {
   document.getElementById('reader-settings').classList.toggle('open');
 }
 
-function openInSafariReader() {
-  const reader = document.getElementById('reader');
-  const articleId = reader.dataset.articleId;
-  const article = articles.find(a => String(a.id) === String(articleId));
-  if (!article || !article.url) return;
-  // Opens the original article URL — Safari will show the Reader button in the address bar automatically
-  window.open(article.url, '_blank', 'noopener,noreferrer');
+function setReaderSpeed(rate) {
+  localStorage.setItem('rn_tts_speed', rate);
+  applyReaderSettings();
 }
 
 document.addEventListener('click', e => {
@@ -3598,7 +3576,7 @@ function saveNotesNow() {
   // within _fullText, so boundary events can keep _charIndex accurate.
   function _speak(text, startOffset) {
     const u = new SpeechSynthesisUtterance(text);
-    u.rate  = 0.92;
+    u.rate  = parseFloat(localStorage.getItem('rn_tts_speed') || '1.0');
     u.pitch = 1;
     const v = _getSelectedVoice();
     if (v) u.voice = v;
