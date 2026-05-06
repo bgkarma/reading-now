@@ -1281,6 +1281,7 @@
 
   /* Reader background overrides (scoped to the overlay) */
   #reader[data-bg="sepia"] {
+    --bg:           #f4ead8;
     --surface:      #f4ead8;
     --surface-alt:  #ede0c8;
     --text:         #3b2a1a;
@@ -1289,9 +1290,12 @@
     --border:       #d0bfa0;
     --border-light: #ddd0b8;
     --accent-light: #f0ddc8;
+    --shadow-sm:    0 1px 3px rgba(0,0,0,0.1);
+    --shadow-md:    0 6px 24px rgba(0,0,0,0.15);
   }
 
   #reader[data-bg="dark"] {
+    --bg:           #13111e;
     --surface:      #13111e;
     --surface-alt:  #231f32;
     --text:         #e6e2d8;
@@ -1300,6 +1304,8 @@
     --border:       #2c2938;
     --border-light: #221f2e;
     --accent-light: #2a1a1a;
+    --shadow-sm:    0 1px 3px rgba(0,0,0,0.35);
+    --shadow-md:    0 6px 24px rgba(0,0,0,0.55);
   }
 
   /* ── Resume indicator ────────────────────────────────────────────────── */
@@ -3205,12 +3211,6 @@ function applyTheme(dark) {
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
   localStorage.setItem('rn_theme', dark ? 'dark' : 'light');
   document.getElementById('meta-theme-color').content = dark ? '#13111e' : '#eceae3';
-  // Sync reader background
-  if (dark) {
-    localStorage.setItem('rn_reader_bg', 'dark');
-  } else if (localStorage.getItem('rn_reader_bg') === 'dark') {
-    localStorage.setItem('rn_reader_bg', 'default');
-  }
   if (document.getElementById('reader').classList.contains('open')) {
     applyReaderSettings();
   }
@@ -3305,8 +3305,6 @@ function setReaderFamily(f) {
 
 function setReaderBg(bg) {
   localStorage.setItem('rn_reader_bg', bg);
-  if (bg === 'dark')  { applyTheme(true);  return; }
-  if (bg === 'sepia') { applyTheme(false); return; }
   applyReaderSettings();
 }
 
